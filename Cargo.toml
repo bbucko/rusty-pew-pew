@@ -6,3 +6,4 @@ authors = ["Blazej Bucko <blazej.bucko@gmail.com>"]
 [dependencies]
 gfx = "0.17.1"
 sdl2 = "0.31.0"
+cgmath = "0.16.1"
