@@ -1,0 +1,24 @@
+<?xml version="1.0" ?>
+<STATES>
+    <MENU>
+        <TEXTURES>
+            <texture filename="assets/exit.jpg" ID="exitBtn"/>
+            <texture filename="assets/play.jpg" ID="playBtn"/>
+        </TEXTURES>
+
+        <OBJECTS>
+            <object type="MenuButton" x="100" y="100" width="400" height="100" textureID="playBtn" numFrames="0" callbackID="1"/>
+            <object type="MenuButton" x="100" y="300" width="400" height="100" textureID="exitBtn" numFrames="0" callbackID="2"/>
+        </OBJECTS>
+    </MENU>
+    <PLAY>
+        <TEXTURES>
+            <texture filename="assets/plane.png" ID="plane"/>
+            <texture filename="assets/whitePlane.png" ID="whitePlane"/>
+            <texture filename="assets/bullet.png" ID="bullet"/>
+        </TEXTURES>
+    </PLAY>
+
+    <GAMEOVER>
+    </GAMEOVER>
+</STATES>
