@@ -1,11 +1,11 @@
 extern crate sdl2;
 
+use self::sdl2::event::Event;
+use self::sdl2::keyboard::Keycode;
 use game;
 use game::InputHandler;
 use sdl::SDLEngine;
 use sdl::SDLInputHandler;
-use self::sdl2::event::Event;
-use self::sdl2::keyboard::Keycode;
 
 impl InputHandler for SDLInputHandler {
     fn handle(&mut self) -> Vec<game::Event> {
@@ -13,12 +13,24 @@ impl InputHandler for SDLInputHandler {
 
         for event in self.event_pump.poll_iter() {
             match event {
-                Event::Quit { .. } | Event::KeyDown { keycode: Some(Keycode::Escape), .. } => {
+                Event::Quit { .. }
+                | Event::KeyDown {
+                    keycode: Some(Keycode::Escape),
+                    ..
+                } => {
                     vec.push(1);
                 }
-                Event::KeyDown { keycode: Some(key), .. } => {
+                Event::KeyDown {
+                    keycode: Some(key), ..
+                } => {
                     println!("key pressed: {:?}", key);
                     vec.push(2);
+                }
+                Event::MouseMotion { .. }
+                | Event::MouseWheel { .. }
+                | Event::MouseButtonDown { .. }
+                | Event::MouseButtonUp { .. } => {
+                    //ignoring mouse
                 }
                 _ => {
                     println!("other: {:?}", event);

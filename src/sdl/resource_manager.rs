@@ -20,9 +20,10 @@ impl<'l, K, R, L> ResourceManager<'l, K, R, L>
           L: ResourceLoader<'l, R>
 {
     pub fn new(loader: &'l L) -> Self {
+        let cache = HashMap::new();
         ResourceManager {
-            cache: HashMap::new(),
-            loader: loader,
+            cache,
+            loader,
         }
     }
 
@@ -37,7 +38,8 @@ impl<'l, K, R, L> ResourceManager<'l, K, R, L>
             .get(details)
             .cloned()
             .map_or_else(|| {
-                let resource = Rc::new(self.loader.load(details)?);
+                let texture = self.loader.load(details)?;
+                let resource = Rc::new(texture);
                 self.cache.insert(details.into(), resource.clone());
                 Ok(resource)
             },
@@ -49,11 +51,12 @@ impl<'l, K, R, L> ResourceManager<'l, K, R, L>
 impl<'l, T> ResourceLoader<'l, Texture<'l>> for TextureCreator<T> {
     type Args = str;
     fn load(&'l self, path: &str) -> Result<Texture, String> {
-        println!("LOADED A TEXTURE");
+        println!("loading a texture from path: {:?}", path);
         self.load_texture(path)
     }
 }
 
+// Generic trait to Load any Resource Kind
 pub trait ResourceLoader<'l, R> {
     type Args: ?Sized;
     fn load(&'l self, data: &Self::Args) -> Result<R, String>;

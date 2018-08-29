@@ -1,10 +1,11 @@
 extern crate cgmath;
 
+use game::enemy::Enemy;
 use game::player::Player;
-use std::collections::LinkedList;
 use std::fmt::Debug;
 
 mod player;
+mod enemy;
 
 pub type Event = u8;
 
@@ -13,7 +14,10 @@ pub type Pos = cgmath::Vector2<f32>;
 pub type Transl = cgmath::Vector2<f32>;
 
 pub trait Renderer {
+    fn prepare(&mut self);
     fn draw(&mut self);
+    fn draw_texture(&mut self, texture_id: &str, position: Pos);
+    fn draw_frame(&mut self, texture_id: &str, position: Pos, frame: u8);
 }
 
 pub trait InputHandler {
@@ -23,7 +27,8 @@ pub trait InputHandler {
 pub trait Position {}
 
 pub trait GameObject: Debug {
-    fn draw(&self, &Renderer);
+    fn draw(&self, renderer: &mut Renderer);
+
     fn update(&mut self);
 }
 
@@ -32,13 +37,16 @@ pub struct Game<R: Renderer, IH: InputHandler> {
     video: R,
     input_handler: IH,
     player: Player,
-    game_objects: LinkedList<Box<GameObject>>,
+    game_objects: Vec<Box<GameObject>>,
 }
 
 impl<T: Renderer, U: InputHandler> Game<T, U> {
     pub fn new(video: T, input_handler: U) -> Game<T, U> {
-        let game_objects: LinkedList<Box<GameObject>> = LinkedList::new();
-        let player = Player::new();
+        let player = Player::new(Pos::new(10.0, 10.0));
+
+        let mut game_objects: Vec<Box<GameObject>> = Vec::new();
+        game_objects.push(Box::new(Enemy::new()));
+
         Game {
             running: true,
             video,
@@ -65,14 +73,22 @@ impl<T: Renderer, U: InputHandler> Game<T, U> {
     }
 
     pub fn update(&mut self) {
-        &self.player.update();
-        for mut game_object in &self.game_objects {
-            println!("{:?}", game_object);
+        self.player.update();
+
+        for game_object in self.game_objects.iter_mut() {
+            game_object.update();
         }
-        return;
     }
 
     pub fn render(&mut self) {
+        self.video.prepare();
+
+        self.player.draw(&mut self.video);
+
+        for game_object in self.game_objects.iter_mut() {
+            game_object.draw(&mut self.video);
+        }
+
         self.video.draw();
     }
 }
