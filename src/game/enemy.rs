@@ -17,7 +17,7 @@ impl Enemy {
 
 impl GameObject for Enemy {
     fn draw(&self, renderer: &mut Renderer) {
-        renderer.draw_texture("assets/bullet.png", self.position);
+        renderer.draw_texture("whitePlane", self.position);
     }
 
     fn update(&mut self) {}

@@ -2,16 +2,20 @@ extern crate sdl2;
 
 use game::Pos;
 use game::Renderer;
+use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 use sdl2::render::Canvas;
+use sdl2::render::TextureCreator;
 use sdl2::video::Window;
 use sdl2::video::WindowContext;
+use sdl::SDLEngine;
 use sdl::SDLVideo;
 use sdl::TextureManager;
 use sdl::TextureWrapper;
 use std::collections::HashMap;
 use std::fs::File;
 use std::io::BufReader;
+use xml::attribute::OwnedAttribute;
 use xml::EventReader;
 use xml::reader::XmlEvent;
 
@@ -37,7 +41,7 @@ impl<'a> Renderer for SDLVideo<'a> {
     }
 
     fn draw_frame(&mut self, texture_id: &str, position: Pos, frame: u8) {
-        //texture_wrapper should be always present
+        //texture_wrapper should be always present. remove when map parsing is implemented
         let texture_wrapper = self.objects.entry(String::from(texture_id))
             .or_insert(TextureWrapper { texture_id: String::from(texture_id), width: 64, height: 64, padding: 1, frames: 3 });
 
@@ -55,43 +59,101 @@ impl<'a> Renderer for SDLVideo<'a> {
 }
 
 impl<'a> SDLVideo<'a> {
-    pub fn init(canvas: Canvas<Window>, texture_manager: TextureManager<'a, WindowContext>) -> SDLVideo {
+    pub fn init(engine: &SDLEngine) -> (Canvas<Window>, TextureCreator<WindowContext>) {
+        let video_subsystem = engine.context.video().unwrap();
+        let window = video_subsystem
+            .window("rusty pew pew", 800, 600)
+            .position_centered()
+            .opengl()
+            .build()
+            .expect("Error creating window");
+        let mut canvas = window.into_canvas().present_vsync().build().unwrap();
+        canvas.set_draw_color(Color::RGB(0, 0, 0));
+        let texture_creator = canvas.texture_creator();
+        (canvas, texture_creator)
+    }
+
+
+    pub fn new(canvas: Canvas<Window>, mut texture_manager: TextureManager<'a, WindowContext>) -> SDLVideo {
         let objects = HashMap::new();
 
-        load();
+        SDLVideo::load_textures(&mut texture_manager);
 
         SDLVideo { canvas, texture_manager, objects }
     }
-}
 
-fn load() {
-    let file = File::open("assets/game.xml").unwrap();
-    let file = BufReader::new(file);
+    fn load_textures(texture_manager: &mut TextureManager<'a, WindowContext>) {
+        let mut textures = Vec::new();
+        SDLVideo::parse_file(&mut textures);
 
-    let parser = EventReader::new(file);
-    let mut depth = 0;
-    for e in parser {
-        match e {
-            Ok(XmlEvent::StartElement { name, .. }) => {
-                println!("{}+{}", indent(depth), name);
-                depth += 1;
+        for element in textures {
+            let (key, filename) = element;
+            texture_manager.preload(&key, &filename)
+                .expect("Error preloading texture");
+        }
+    }
+
+    fn find_attribute(attributes: &Vec<OwnedAttribute>, name: &str) -> String {
+        for attr in attributes {
+            if attr.name.local_name.to_ascii_lowercase() == name {
+                return String::from(attr.value.clone());
             }
-            Ok(XmlEvent::EndElement { name }) => {
-                depth -= 1;
-                println!("{}-{}", indent(depth), name);
+        }
+        panic!("Unable to parse textures");
+    }
+
+    fn parse_file(textures: &mut Vec<(String, String)>) {
+        let mut parsing_textures = false;
+
+        let file = File::open("assets/game.xml").unwrap();
+        let file = BufReader::new(file);
+
+        let parser = EventReader::new(file);
+
+        for e in parser {
+            match e {
+                Ok(XmlEvent::StartElement { name, attributes, .. }) => {
+                    if name.local_name.to_ascii_lowercase() == "textures" {
+                        parsing_textures = true;
+                    } else if name.local_name.to_ascii_lowercase() == "texture" && parsing_textures {
+                        let mut key = SDLVideo::find_attribute(&attributes, "id");
+                        let mut filename = SDLVideo::find_attribute(&attributes, "filename");
+
+                        textures.push((key, filename));
+                    }
+                }
+                Ok(XmlEvent::EndElement { name, .. }) => {
+                    if name.local_name.to_ascii_lowercase() == "textures" {
+                        parsing_textures = false;
+                    }
+                }
+                Err(e) => {
+                    println!("Error: {}", e);
+                    break;
+                }
+                _ => {}
             }
-            Err(e) => {
-                println!("Error: {}", e);
-                break;
-            }
-            _ => {}
         }
     }
 }
 
-fn indent(size: usize) -> String {
-    const INDENT: &'static str = "    ";
-    (0..size).map(|_| INDENT)
-        .fold(String::with_capacity(size * INDENT.len()), |r, s| r + s)
-}
 
+#[cfg(test)]
+mod tests {
+    use sdl::SDLVideo;
+
+    #[test]
+    fn test_parsing_xml() {
+        //given
+        let mut textures = Vec::new();
+
+        //when
+        SDLVideo::parse_file(&mut textures);
+
+        //then
+        assert_eq!(textures.len(), 5);
+        assert!(textures.contains(&(String::from("plane"), String::from("assets/plane.png"))));
+        assert!(textures.contains(&(String::from("whitePlane"), String::from("assets/whitePlane.png"))));
+        assert!(textures.contains(&(String::from("bullet"), String::from("assets/bullet.png"))));
+    }
+}

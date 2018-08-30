@@ -22,7 +22,7 @@ impl Player {
 
 impl GameObject for Player {
     fn draw(&self, renderer: &mut Renderer) {
-        renderer.draw_frame("assets/plane.png", self.position, self.frame);
+        renderer.draw_frame("plane", self.position, self.frame);
     }
 
     fn update(&mut self) {

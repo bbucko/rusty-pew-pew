@@ -42,7 +42,7 @@ impl InputHandler for SDLInputHandler {
 }
 
 impl SDLInputHandler {
-    pub fn init(sdl: &SDLEngine) -> SDLInputHandler {
+    pub fn new(sdl: &SDLEngine) -> SDLInputHandler {
         let event_pump = sdl.context.event_pump().unwrap();
         SDLInputHandler { event_pump }
     }

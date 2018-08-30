@@ -3,6 +3,7 @@ use sdl2::render::Texture;
 use sdl2::render::TextureCreator;
 use std::borrow::Borrow;
 use std::collections::HashMap;
+use std::fmt::Debug;
 use std::hash::Hash;
 use std::rc::Rc;
 
@@ -21,29 +22,31 @@ impl<'l, K, R, L> ResourceManager<'l, K, R, L>
 {
     pub fn new(loader: &'l L) -> Self {
         let cache = HashMap::new();
-        ResourceManager {
-            cache,
-            loader,
-        }
+        ResourceManager { cache, loader }
+    }
+
+    pub fn preload<D>(&mut self, details: &D, filename: &D) -> Result<(), String>
+        where L: ResourceLoader<'l, R, Args=D>,
+              D: Eq + Hash + ?Sized,
+              K: Borrow<D> + for<'a> From<&'a D>
+    {
+        let texture = self.loader.load(filename)?;
+        self.cache.insert(details.into(), Rc::new(texture));
+        Ok(())
     }
 
     // Generics magic to allow a HashMap to use String as a key
     // while allowing it to use &str for gets
     pub fn load<D>(&mut self, details: &D) -> Result<Rc<R>, String>
         where L: ResourceLoader<'l, R, Args=D>,
-              D: Eq + Hash + ?Sized,
+              D: Eq + Hash + ?Sized + Debug,
               K: Borrow<D> + for<'a> From<&'a D>
     {
         self.cache
             .get(details)
             .cloned()
-            .map_or_else(|| {
-                let texture = self.loader.load(details)?;
-                let resource = Rc::new(texture);
-                self.cache.insert(details.into(), resource.clone());
-                Ok(resource)
-            },
-                         Ok)
+            .map(Ok)
+            .expect(&format!("Invalid texture ID: {:?}", details))
     }
 }
 
