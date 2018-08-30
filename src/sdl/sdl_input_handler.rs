@@ -1,20 +1,17 @@
-extern crate sdl2;
-
-use self::sdl2::event::Event;
-use self::sdl2::keyboard::Keycode;
-use game;
+use game::Event as GameEvent;
 use game::InputHandler;
+use sdl2::event::Event;
+use sdl2::keyboard::Keycode;
+use sdl::InputHandler as SDLInputHandler;
 use sdl::SDLEngine;
-use sdl::SDLInputHandler;
 
 impl InputHandler for SDLInputHandler {
-    fn handle(&mut self) -> Vec<game::Event> {
+    fn handle(&mut self) -> Vec<GameEvent> {
         let mut vec = Vec::new();
 
         for event in self.event_pump.poll_iter() {
             match event {
-                Event::Quit { .. }
-                | Event::KeyDown {
+                Event::Quit { .. } | Event::KeyDown {
                     keycode: Some(Keycode::Escape),
                     ..
                 } => {
@@ -42,8 +39,8 @@ impl InputHandler for SDLInputHandler {
 }
 
 impl SDLInputHandler {
-    pub fn new(sdl: &SDLEngine) -> SDLInputHandler {
+    pub fn new(sdl: &SDLEngine) -> Self {
         let event_pump = sdl.context.event_pump().unwrap();
-        SDLInputHandler { event_pump }
+        Self { event_pump }
     }
 }

@@ -17,11 +17,11 @@ pub fn main() {
 
     let engine = sdl::SDLEngine::new();
 
-    let (canvas, texture_creator) = sdl::SDLVideo::init(&engine);
+    let (canvas, texture_creator) = sdl::Renderer::init(&engine);
     let texture_manager = TextureManager::new(&texture_creator);
 
-    let video = sdl::SDLVideo::new(canvas, texture_manager);
-    let input_handler = sdl::SDLInputHandler::new(&engine);
+    let video = sdl::Renderer::new(canvas, texture_manager);
+    let input_handler = sdl::InputHandler::new(&engine);
 
     let mut game = Game::new(video, input_handler);
     let mut frame = 0;

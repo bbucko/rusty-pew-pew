@@ -1,5 +1,3 @@
-extern crate sdl2;
-
 use game::Pos;
 use game::Renderer;
 use sdl2::pixels::Color;
@@ -8,8 +6,8 @@ use sdl2::render::Canvas;
 use sdl2::render::TextureCreator;
 use sdl2::video::Window;
 use sdl2::video::WindowContext;
+use sdl::Renderer as SDLRenderer;
 use sdl::SDLEngine;
-use sdl::SDLVideo;
 use sdl::TextureManager;
 use sdl::TextureWrapper;
 use std::collections::HashMap;
@@ -19,7 +17,7 @@ use xml::attribute::OwnedAttribute;
 use xml::EventReader;
 use xml::reader::XmlEvent;
 
-impl<'a> Renderer for SDLVideo<'a> {
+impl<'a> Renderer for SDLRenderer<'a> {
     fn prepare(&mut self) {
         self.canvas.clear();
     }
@@ -58,7 +56,7 @@ impl<'a> Renderer for SDLVideo<'a> {
     }
 }
 
-impl<'a> SDLVideo<'a> {
+impl<'a> SDLRenderer<'a> {
     pub fn init(engine: &SDLEngine) -> (Canvas<Window>, TextureCreator<WindowContext>) {
         let video_subsystem = engine.context.video().unwrap();
         let window = video_subsystem
@@ -69,22 +67,24 @@ impl<'a> SDLVideo<'a> {
             .expect("Error creating window");
         let mut canvas = window.into_canvas().present_vsync().build().unwrap();
         canvas.set_draw_color(Color::RGB(0, 0, 0));
+
         let texture_creator = canvas.texture_creator();
+
         (canvas, texture_creator)
     }
 
 
-    pub fn new(canvas: Canvas<Window>, mut texture_manager: TextureManager<'a, WindowContext>) -> SDLVideo {
+    pub fn new(canvas: Canvas<Window>, mut texture_manager: TextureManager<'a, WindowContext>) -> Self {
         let objects = HashMap::new();
 
-        SDLVideo::load_textures(&mut texture_manager);
+        Self::load_textures(&mut texture_manager);
 
-        SDLVideo { canvas, texture_manager, objects }
+        Self { canvas, texture_manager, objects }
     }
 
     fn load_textures(texture_manager: &mut TextureManager<'a, WindowContext>) {
         let mut textures = Vec::new();
-        SDLVideo::parse_file(&mut textures);
+        Self::parse_file(&mut textures);
 
         for element in textures {
             let (key, filename) = element;
@@ -104,6 +104,7 @@ impl<'a> SDLVideo<'a> {
 
     fn parse_file(textures: &mut Vec<(String, String)>) {
         let mut parsing_textures = false;
+        let mut parsing_game = false;
 
         let file = File::open("assets/game.xml").unwrap();
         let file = BufReader::new(file);
@@ -115,9 +116,11 @@ impl<'a> SDLVideo<'a> {
                 Ok(XmlEvent::StartElement { name, attributes, .. }) => {
                     if name.local_name.to_ascii_lowercase() == "textures" {
                         parsing_textures = true;
-                    } else if name.local_name.to_ascii_lowercase() == "texture" && parsing_textures {
-                        let mut key = SDLVideo::find_attribute(&attributes, "id");
-                        let mut filename = SDLVideo::find_attribute(&attributes, "filename");
+                    } else if name.local_name.to_ascii_lowercase() == "play" {
+                        parsing_game = true;
+                    } else if name.local_name.to_ascii_lowercase() == "texture" && parsing_textures && parsing_game {
+                        let mut key = Self::find_attribute(&attributes, "id");
+                        let mut filename = Self::find_attribute(&attributes, "filename");
 
                         textures.push((key, filename));
                     }
@@ -137,10 +140,16 @@ impl<'a> SDLVideo<'a> {
     }
 }
 
+impl TextureWrapper {
+    pub fn src_rect(&self) -> Rect {
+        Rect::new(self.padding as i32, self.padding as i32, self.width, self.height)
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
-    use sdl::SDLVideo;
+    use sdl::Renderer;
 
     #[test]
     fn test_parsing_xml() {
@@ -148,10 +157,10 @@ mod tests {
         let mut textures = Vec::new();
 
         //when
-        SDLVideo::parse_file(&mut textures);
+        Renderer::parse_file(&mut textures);
 
         //then
-        assert_eq!(textures.len(), 5);
+        assert_eq!(textures.len(), 3);
         assert!(textures.contains(&(String::from("plane"), String::from("assets/plane.png"))));
         assert!(textures.contains(&(String::from("whitePlane"), String::from("assets/whitePlane.png"))));
         assert!(textures.contains(&(String::from("bullet"), String::from("assets/bullet.png"))));
