@@ -1,14 +1,17 @@
+extern crate cgmath;
 extern crate sdl2;
 extern crate xml;
 
 use game::Game;
 use sdl::TextureManager;
+
 use std::thread;
 use std::time::Duration;
 use std::time::SystemTime;
 
 mod game;
 mod sdl;
+mod utils;
 
 const FPS: u8 = 60;
 

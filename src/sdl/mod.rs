@@ -1,17 +1,17 @@
-use sdl2::EventPump;
+use sdl::resource_manager::ResourceManager;
 use sdl2::render::Canvas;
 use sdl2::render::Texture;
 use sdl2::render::TextureCreator;
-use sdl2::Sdl;
 use sdl2::video::Window;
 use sdl2::video::WindowContext;
-use sdl::resource_manager::ResourceManager;
+use sdl2::EventPump;
+use sdl2::Sdl;
 use std::collections::HashMap;
 
+mod resource_manager;
 mod sdl_engine;
 mod sdl_input_handler;
 mod sdl_video;
-mod resource_manager;
 
 pub type TextureManager<'l, T> = ResourceManager<'l, String, Texture<'l>, TextureCreator<T>>;
 

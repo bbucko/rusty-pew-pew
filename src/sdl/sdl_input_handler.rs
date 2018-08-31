@@ -1,9 +1,9 @@
 use game::Event as GameEvent;
 use game::InputHandler;
-use sdl2::event::Event;
-use sdl2::keyboard::Keycode;
 use sdl::InputHandler as SDLInputHandler;
 use sdl::SDLEngine;
+use sdl2::event::Event;
+use sdl2::keyboard::Keycode;
 
 impl InputHandler for SDLInputHandler {
     fn handle(&mut self) -> Vec<GameEvent> {
@@ -11,7 +11,8 @@ impl InputHandler for SDLInputHandler {
 
         for event in self.event_pump.poll_iter() {
             match event {
-                Event::Quit { .. } | Event::KeyDown {
+                Event::Quit { .. }
+                | Event::KeyDown {
                     keycode: Some(Keycode::Escape),
                     ..
                 } => {

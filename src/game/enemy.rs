@@ -4,13 +4,13 @@ use game::Renderer;
 
 #[derive(Debug)]
 pub struct Enemy {
-    position: Pos
+    position: Pos,
 }
 
 impl Enemy {
     pub fn new() -> Enemy {
         Enemy {
-            position: Pos::new(0.0, 0.0)
+            position: Pos::new(0.0, 0.0),
         }
     }
 }
