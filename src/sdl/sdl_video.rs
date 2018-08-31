@@ -1,18 +1,17 @@
 use game::Pos;
 use game::Renderer;
-use sdl::Renderer as SDLRenderer;
-use sdl::SDLEngine;
-use sdl::TextureManager;
-use sdl::TextureWrapper;
 use sdl2::pixels::Color;
 use sdl2::rect::Rect;
 use sdl2::render::Canvas;
 use sdl2::render::TextureCreator;
 use sdl2::video::Window;
 use sdl2::video::WindowContext;
+use sdl::Renderer as SDLRenderer;
+use sdl::SDLEngine;
+use sdl::TextureManager;
+use sdl::TextureWrapper;
 use std::collections::HashMap;
-use utils::xml::find_attribute;
-use utils::xml::parser;
+use utils::xml;
 use xml::reader::XmlEvent;
 
 impl<'a> Renderer for SDLRenderer<'a> {
@@ -40,15 +39,16 @@ impl<'a> Renderer for SDLRenderer<'a> {
 
     fn draw_frame(&mut self, texture_id: &str, position: Pos, frame: u8) {
         //texture_wrapper should be always present. remove when map parsing is implemented
-        let texture_wrapper = self.objects.entry(String::from(texture_id)).or_insert(
-            TextureWrapper {
+        let texture_wrapper = self
+            .objects
+            .entry(String::from(texture_id))
+            .or_insert(TextureWrapper {
                 texture_id: String::from(texture_id),
                 width: 64,
                 height: 64,
                 padding: 1,
                 frames: 3,
-            },
-        );
+            });
 
         println!("Drawing frame {} out of {}", frame, texture_wrapper.frames);
 
@@ -87,10 +87,7 @@ impl<'a> SDLRenderer<'a> {
         (canvas, texture_creator)
     }
 
-    pub fn new(
-        canvas: Canvas<Window>,
-        mut texture_manager: TextureManager<'a, WindowContext>,
-    ) -> Self {
+    pub fn new(canvas: Canvas<Window>, mut texture_manager: TextureManager<'a, WindowContext>) -> Self {
         let objects = HashMap::new();
 
         Self::load_textures(&mut texture_manager);
@@ -118,13 +115,11 @@ impl<'a> SDLRenderer<'a> {
         let mut parsing_textures = false;
         let mut parsing_play_state = false;
 
-        let parser = parser("assets/game.xml");
+        let parser = xml::parser("assets/game.xml");
 
         for e in parser {
             match e {
-                Ok(XmlEvent::StartElement {
-                    name, attributes, ..
-                }) => {
+                Ok(XmlEvent::StartElement { name, attributes, .. }) => {
                     if name.local_name.to_ascii_lowercase() == "textures" {
                         parsing_textures = true;
                     } else if name.local_name.to_ascii_lowercase() == "play" {
@@ -132,12 +127,12 @@ impl<'a> SDLRenderer<'a> {
                     } else if name.local_name.to_ascii_lowercase() == "texture"
                         && parsing_textures
                         && parsing_play_state
-                    {
-                        let mut key = find_attribute(&attributes, "id");
-                        let mut filename = find_attribute(&attributes, "filename");
+                        {
+                            let mut key = xml::find_attribute(&attributes, "id");
+                            let mut filename = xml::find_attribute(&attributes, "filename");
 
-                        textures.push((key, filename));
-                    }
+                            textures.push((key, filename));
+                        }
                 }
                 Ok(XmlEvent::EndElement { name, .. }) => {
                     if name.local_name.to_ascii_lowercase() == "textures" {
@@ -158,12 +153,7 @@ impl<'a> SDLRenderer<'a> {
 
 impl TextureWrapper {
     pub fn src_rect(&self) -> Rect {
-        Rect::new(
-            self.padding as i32,
-            self.padding as i32,
-            self.width,
-            self.height,
-        )
+        Rect::new(self.padding as i32, self.padding as i32, self.width, self.height)
     }
 }
 
@@ -182,10 +172,7 @@ mod tests {
         //then
         assert_eq!(textures.len(), 3);
         assert!(textures.contains(&(String::from("plane"), String::from("assets/plane.png"))));
-        assert!(textures.contains(&(
-            String::from("whitePlane"),
-            String::from("assets/whitePlane.png")
-        )));
+        assert!(textures.contains(&(String::from("whitePlane"), String::from("assets/whitePlane.png"))));
         assert!(textures.contains(&(String::from("bullet"), String::from("assets/bullet.png"))));
     }
 }

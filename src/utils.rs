@@ -12,10 +12,10 @@ pub mod xml {
         EventReader::new(file)
     }
 
-    pub fn find_attribute(attributes: &Vec<OwnedAttribute>, name: &str) -> String {
+    pub fn find_attribute(attributes: &[OwnedAttribute], name: &str) -> String {
         for attr in attributes {
             if attr.name.local_name.to_ascii_lowercase() == name {
-                return String::from(attr.value.clone());
+                return attr.value.clone();
             }
         }
         panic!("Unable to parse textures");

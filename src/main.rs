@@ -4,7 +4,6 @@ extern crate xml;
 
 use game::Game;
 use sdl::TextureManager;
-
 use std::thread;
 use std::time::Duration;
 use std::time::SystemTime;
@@ -42,6 +41,6 @@ pub fn main() {
         if duration.le(&delay) {
             thread::sleep(delay - duration);
         }
-        frame = frame + 1;
+        frame += 1;
     }
 }

@@ -16,7 +16,7 @@ impl Player {
     }
 
     pub fn up(&mut self) {
-        self.position = self.position + Transl::new(0.0, 1.0);
+        self.position += Transl::new(0.0, 1.0);
     }
 }
 

@@ -49,7 +49,7 @@ where
             .get(details)
             .cloned()
             .map(Ok)
-            .expect(&format!("Invalid texture ID: {:?}", details))
+	    .unwrap_or_else(|| panic!("Invalid texture ID: {:?}", details))
     }
 }
 

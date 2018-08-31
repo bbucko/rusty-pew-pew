@@ -83,7 +83,7 @@ impl<T: Renderer, U: InputHandler> Game<T, U> {
     pub fn update(&mut self) {
         self.player.update();
 
-        for game_object in self.game_objects.iter_mut() {
+        for game_object in &mut self.game_objects {
             game_object.update();
         }
     }
@@ -93,7 +93,7 @@ impl<T: Renderer, U: InputHandler> Game<T, U> {
 
         self.player.draw(&mut self.video);
 
-        for game_object in self.game_objects.iter_mut() {
+        for game_object in &mut self.game_objects {
             game_object.draw(&mut self.video);
         }
 
@@ -105,9 +105,7 @@ impl<T: Renderer, U: InputHandler> Game<T, U> {
 
         for e in parser {
             match e {
-                Ok(XmlEvent::StartElement {
-                    name, attributes, ..
-                }) => {
+                Ok(XmlEvent::StartElement { name, attributes, .. }) => {
                     println!("{} :: {:?}", name, attributes);
                 }
                 Ok(XmlEvent::EndElement { name, .. }) => {
