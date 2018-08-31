@@ -29,8 +29,8 @@ pub struct InputHandler {
     event_pump: EventPump,
 }
 
+#[derive(Debug, Eq, PartialEq)]
 pub struct TextureWrapper {
-    texture_id: String,
     width: u32,
     height: u32,
     padding: u8,

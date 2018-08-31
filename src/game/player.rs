@@ -11,8 +11,7 @@ pub struct Player {
 
 impl Player {
     pub fn new(position: Pos) -> Self {
-        let frame = 0;
-        Player { position, frame }
+        Player { position, frame: 0 }
     }
 
     pub fn up(&mut self) {

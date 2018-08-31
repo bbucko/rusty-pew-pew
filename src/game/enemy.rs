@@ -8,10 +8,8 @@ pub struct Enemy {
 }
 
 impl Enemy {
-    pub fn new() -> Enemy {
-        Enemy {
-            position: Pos::new(0.0, 0.0),
-        }
+    pub fn new(position: Pos) -> Enemy {
+        Enemy { position }
     }
 }
 

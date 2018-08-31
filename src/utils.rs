@@ -4,6 +4,7 @@ pub mod xml {
     use std::io::BufReader;
     use xml::attribute::OwnedAttribute;
     use xml::EventReader;
+    use std::str::FromStr;
 
     pub fn parser(filename: &str) -> EventReader<BufReader<File>> {
         let file = File::open(filename).unwrap();
@@ -12,12 +13,16 @@ pub mod xml {
         EventReader::new(file)
     }
 
-    pub fn find_attribute(attributes: &[OwnedAttribute], name: &str) -> String {
+    pub fn find_attribute<T: FromStr>(attributes: &[OwnedAttribute], name: &str) -> Option<T> {
         for attr in attributes {
             if attr.name.local_name.to_ascii_lowercase() == name {
-                return attr.value.clone();
+                let result= attr.value.parse();
+                return match result {
+                    Ok(value) => Some(value),
+                    _ => None
+                }
             }
         }
-        panic!("Unable to parse textures");
+        None
     }
 }

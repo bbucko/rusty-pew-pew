@@ -7,15 +7,17 @@
         </TEXTURES>
 
         <OBJECTS>
-            <object type="MenuButton" x="100" y="100" width="400" height="100" textureID="playBtn" numFrames="0" callbackID="1"/>
-            <object type="MenuButton" x="100" y="300" width="400" height="100" textureID="exitBtn" numFrames="0" callbackID="2"/>
+            <object type="MenuButton" x="100" y="100" width="400" height="100" textureID="playBtn" numFrames="0"
+                    callbackID="1"/>
+            <object type="MenuButton" x="100" y="300" width="400" height="100" textureID="exitBtn" numFrames="0"
+                    callbackID="2"/>
         </OBJECTS>
     </MENU>
     <PLAY>
         <TEXTURES>
-            <texture filename="assets/plane.png" ID="plane"/>
-            <texture filename="assets/whitePlane.png" ID="whitePlane"/>
-            <texture filename="assets/bullet.png" ID="bullet"/>
+            <texture filename="assets/plane.png" ID="plane" height="65" width="65" padding="1" frames="3"/>
+            <texture filename="assets/whitePlane.png" ID="whitePlane" height="65" width="65"/>
+            <texture filename="assets/bullet.png" ID="bullet" height="32" width="32"/>
         </TEXTURES>
     </PLAY>
 

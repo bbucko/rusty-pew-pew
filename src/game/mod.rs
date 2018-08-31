@@ -45,7 +45,7 @@ impl<T: Renderer, U: InputHandler> Game<T, U> {
         let player = Player::new(Pos::new(10.0, 10.0));
 
         let mut game_objects: Vec<Box<GameObject>> = Vec::new();
-        game_objects.push(Box::new(Enemy::new()));
+        game_objects.push(Box::new(Enemy::new(Pos::new(120.0, 0.0))));
 
         let level = Level {};
 
