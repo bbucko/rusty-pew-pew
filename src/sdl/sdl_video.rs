@@ -98,35 +98,42 @@ impl<'a> SDLRenderer<'a> {
     }
 
     fn parse_game_file(textures: &mut Vec<(String, String)>, objects: &mut HashMap<String, TextureWrapper>) {
-        let mut parsing_textures = false;
-        let mut parsing_play_state = false;
+        let mut state = XmlReadingState::Off;
 
         let parser = xml::parser("assets/game.xml");
 
         for e in parser {
             match e {
                 Ok(XmlEvent::StartElement { name, attributes, .. }) => {
-                    if name.local_name.to_ascii_lowercase() == "textures" {
-                        parsing_textures = true;
-                    } else if name.local_name.to_ascii_lowercase() == "play" {
-                        parsing_play_state = true;
-                    } else if name.local_name.to_ascii_lowercase() == "texture" && parsing_textures && parsing_play_state {
-                        let key: String = xml::find_attribute(&attributes, "id").unwrap();
-                        let filename = xml::find_attribute(&attributes, "filename").unwrap();
-                        let height = xml::find_attribute(&attributes, "height").expect("Missing height");
-                        let width = xml::find_attribute(&attributes, "width").expect("Missing width");
-                        let padding = xml::find_attribute(&attributes, "padding").unwrap_or(0);
-                        let frames = xml::find_attribute(&attributes, "frames").unwrap_or(1);
+                    if state == XmlReadingState::Off {
+                        if xml::element_is(&name, "play") {
+                            state = XmlReadingState::InPlay
+                        }
+                    } else if state == XmlReadingState::InPlay {
+                        if xml::element_is(&name, "textures") {
+                            state = XmlReadingState::InPlayTextures;
+                        }
+                    } else if state == XmlReadingState::InPlayTextures {
+                        if xml::element_is(&name, "texture") {
+                            let key: String = xml::find_attribute(&attributes, "id").unwrap();
+                            let filename = xml::find_attribute(&attributes, "filename").unwrap();
+                            let height = xml::find_attribute(&attributes, "height").expect("Missing height");
+                            let width = xml::find_attribute(&attributes, "width").expect("Missing width");
+                            let padding = xml::find_attribute(&attributes, "padding").unwrap_or(0);
+                            let frames = xml::find_attribute(&attributes, "frames").unwrap_or(1);
 
-                        textures.push((key.clone(), filename));
-                        objects.insert(key.clone(), TextureWrapper { width, height, padding, frames });
+                            textures.push((key.clone(), filename));
+                            objects.insert(key.clone(), TextureWrapper { width, height, padding, frames });
+                        }
                     }
                 }
                 Ok(XmlEvent::EndElement { name, .. }) => {
-                    if name.local_name.to_ascii_lowercase() == "textures" {
-                        parsing_textures = false;
-                    } else if name.local_name.to_ascii_lowercase() == "play" {
-                        parsing_play_state = false;
+                    if state == XmlReadingState::InPlayTextures && xml::element_is(&name, "textures") {
+                        state = XmlReadingState::InPlay;
+                    }
+
+                    if xml::element_is(&name, "play") {
+                        state = XmlReadingState::Off;
                     }
                 }
                 Err(e) => {
@@ -137,6 +144,13 @@ impl<'a> SDLRenderer<'a> {
             }
         }
     }
+}
+
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+enum XmlReadingState {
+    Off,
+    InPlayTextures,
+    InPlay,
 }
 
 impl TextureWrapper {

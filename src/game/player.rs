@@ -15,6 +15,10 @@ impl Player {
     }
 
     pub fn up(&mut self) {
+        self.position += Transl::new(0.0, -1.0);
+    }
+
+    pub fn down(&mut self) {
         self.position += Transl::new(0.0, 1.0);
     }
 }
@@ -40,6 +44,15 @@ mod tests {
         assert_eq!(player.position, Pos::new(10.0, 0.0));
 
         player.up();
+        assert_eq!(player.position, Pos::new(10.0, -1.0));
+    }
+
+    #[test]
+    fn test_player_down() {
+        let mut player = Player::new(Pos::new(10.0, 0.0));
+        assert_eq!(player.position, Pos::new(10.0, 0.0));
+
+        player.down();
         assert_eq!(player.position, Pos::new(10.0, 1.0));
     }
 }

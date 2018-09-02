@@ -1,6 +1,8 @@
 extern crate cgmath;
 extern crate sdl2;
 extern crate xml;
+extern crate inflate;
+extern crate base64;
 
 use game::Game;
 use sdl::TextureManager;
