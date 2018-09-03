@@ -1,25 +1,34 @@
+use game::player::Player;
+use game::GameObject;
 use game::Pos;
 use game::Renderer;
-use sdl2::pixels::Color;
-use sdl2::rect::Rect;
-use sdl2::render::Canvas;
-use sdl2::render::TextureCreator;
-use sdl2::video::Window;
-use sdl2::video::WindowContext;
+use helpers::parsers;
+use sdl::sdl2::pixels::Color;
+use sdl::sdl2::rect::Rect;
+use sdl::sdl2::render::Canvas;
+use sdl::sdl2::render::TextureCreator;
+use sdl::sdl2::video::Window;
+use sdl::sdl2::video::WindowContext;
 use sdl::Renderer as SDLRenderer;
 use sdl::SDLEngine;
 use sdl::TextureManager;
 use sdl::TextureWrapper;
 use std::collections::HashMap;
-use utils::xml;
-use xml::reader::XmlEvent;
 
 impl<'a> Renderer for SDLRenderer<'a> {
-    fn prepare(&mut self) {
-        self.canvas.clear();
+    fn update_wrappers(&mut self, wrappers: HashMap<String, TextureWrapper>) {
+        self.texture_wrapper = wrappers;
     }
 
-    fn draw(&mut self) {
+    fn render(&mut self, game_objects: &[Box<GameObject>], player: &Player) {
+        self.canvas.clear();
+
+        player.draw(self);
+
+        for game_object in game_objects {
+            game_object.draw(self);
+        }
+
         self.canvas.present();
     }
 
@@ -29,18 +38,16 @@ impl<'a> Renderer for SDLRenderer<'a> {
 
     fn draw_frame(&mut self, texture_id: &str, position: Pos, frame: u8) {
         let texture_wrapper = self
-            .objects
+            .texture_wrapper
             .get(texture_id)
             .expect("Missing texture wrapper");
-
-        println!("Drawing frame {} out of {}", frame, texture_wrapper.frames);
 
         let texture = self
             .texture_manager
             .load(texture_id)
             .expect("Error loading texture");
 
-        let src_rect = texture_wrapper.src_rect();
+        let src_rect = texture_wrapper.src_rect(frame);
         let dst_rect = Rect::new(
             position.x as i32,
             position.y as i32,
@@ -74,20 +81,18 @@ impl<'a> SDLRenderer<'a> {
     }
 
     pub fn new(canvas: Canvas<Window>, mut texture_manager: TextureManager<'a, WindowContext>) -> Self {
-        let mut objects = HashMap::new();
-
-        Self::load_textures(&mut texture_manager, &mut objects);
+        Self::load_textures(&mut texture_manager);
 
         Self {
             canvas,
             texture_manager,
-            objects,
+            texture_wrapper: HashMap::new(),
         }
     }
 
-    fn load_textures(texture_manager: &mut TextureManager<'a, WindowContext>, objects: &mut HashMap<String, TextureWrapper>) {
+    fn load_textures(texture_manager: &mut TextureManager<'a, WindowContext>) {
         let mut textures = Vec::new();
-        Self::parse_game_file(&mut textures, objects);
+        parsers::game_file::parse(&mut textures);
 
         for element in textures {
             let (key, filename) = element;
@@ -96,92 +101,25 @@ impl<'a> SDLRenderer<'a> {
                 .expect("Error preloading texture");
         }
     }
-
-    fn parse_game_file(textures: &mut Vec<(String, String)>, objects: &mut HashMap<String, TextureWrapper>) {
-        let mut state = XmlReadingState::Off;
-
-        let parser = xml::parser("assets/game.xml");
-
-        for e in parser {
-            match e {
-                Ok(XmlEvent::StartElement { name, attributes, .. }) => {
-                    if state == XmlReadingState::Off {
-                        if xml::element_is(&name, "play") {
-                            state = XmlReadingState::InPlay
-                        }
-                    } else if state == XmlReadingState::InPlay {
-                        if xml::element_is(&name, "textures") {
-                            state = XmlReadingState::InPlayTextures;
-                        }
-                    } else if state == XmlReadingState::InPlayTextures {
-                        if xml::element_is(&name, "texture") {
-                            let key: String = xml::find_attribute(&attributes, "id").unwrap();
-                            let filename = xml::find_attribute(&attributes, "filename").unwrap();
-                            let height = xml::find_attribute(&attributes, "height").expect("Missing height");
-                            let width = xml::find_attribute(&attributes, "width").expect("Missing width");
-                            let padding = xml::find_attribute(&attributes, "padding").unwrap_or(0);
-                            let frames = xml::find_attribute(&attributes, "frames").unwrap_or(1);
-
-                            textures.push((key.clone(), filename));
-                            objects.insert(key.clone(), TextureWrapper { width, height, padding, frames });
-                        }
-                    }
-                }
-                Ok(XmlEvent::EndElement { name, .. }) => {
-                    if state == XmlReadingState::InPlayTextures && xml::element_is(&name, "textures") {
-                        state = XmlReadingState::InPlay;
-                    }
-
-                    if xml::element_is(&name, "play") {
-                        state = XmlReadingState::Off;
-                    }
-                }
-                Err(e) => {
-                    println!("Error: {}", e);
-                    break;
-                }
-                _ => {}
-            }
-        }
-    }
-}
-
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-enum XmlReadingState {
-    Off,
-    InPlayTextures,
-    InPlay,
 }
 
 impl TextureWrapper {
-    pub fn src_rect(&self) -> Rect {
-        Rect::new(self.padding as i32, self.padding as i32, self.width, self.height)
+    pub fn new(texture_id: String, width: u32, height: u32, padding: u8, frames: u8) -> TextureWrapper {
+        TextureWrapper {
+            texture_id,
+            width,
+            height,
+            padding,
+            frames,
+        }
     }
-}
+    pub fn src_rect(&self, _frame: u8) -> Rect {
+        let padding = self.padding as u32;
 
-#[cfg(test)]
-mod tests {
-    use sdl::Renderer;
-    use sdl::TextureWrapper;
-    use std::collections::HashMap;
-
-    #[test]
-    fn test_parsing_xml() {
-        //given
-        let mut textures = Vec::new();
-        let mut objects = HashMap::new();
-
-        //when
-        Renderer::parse_game_file(&mut textures, &mut objects);
-
-        //then
-        assert_eq!(textures.len(), 3);
-        assert!(textures.contains(&(String::from("plane"), String::from("assets/plane.png"))));
-        assert!(textures.contains(&(String::from("whitePlane"), String::from("assets/whitePlane.png"))));
-        assert!(textures.contains(&(String::from("bullet"), String::from("assets/bullet.png"))));
-
-        assert_eq!(objects.len(), 3);
-        assert_eq!(objects.get("plane"), Some(&TextureWrapper { width: 65, height: 65, padding: 1, frames: 3 }));
-        assert_eq!(objects.get("whitePlane"), Some(&TextureWrapper { width: 65, height: 65, padding: 0, frames: 1 }));
+        let width = self.width;
+        let height = self.height;
+        let x = padding as i32;
+        let y = padding as i32;
+        Rect::new(x, y, width, height)
     }
 }

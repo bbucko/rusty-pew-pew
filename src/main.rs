@@ -1,18 +1,13 @@
-extern crate cgmath;
-extern crate sdl2;
-extern crate xml;
-extern crate inflate;
 extern crate base64;
+extern crate cgmath;
 
-use game::Game;
-use sdl::TextureManager;
 use std::thread;
 use std::time::Duration;
 use std::time::SystemTime;
 
 mod game;
+pub mod helpers;
 mod sdl;
-mod utils;
 
 const FPS: u8 = 60;
 
@@ -22,12 +17,12 @@ pub fn main() {
     let engine = sdl::SDLEngine::new();
 
     let (canvas, texture_creator) = sdl::Renderer::init(&engine);
-    let texture_manager = TextureManager::new(&texture_creator);
+    let texture_manager = sdl::TextureManager::new(&texture_creator);
 
     let video = sdl::Renderer::new(canvas, texture_manager);
     let input_handler = sdl::InputHandler::new(&engine);
 
-    let mut game = Game::new(video, input_handler);
+    let mut game = game::Engine::new(video, input_handler);
     let mut frame = 0;
     while game.is_running() {
         println!("tick: {:?}", frame);

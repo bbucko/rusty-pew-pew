@@ -1,6 +1,6 @@
-use sdl2::image::LoadTexture;
-use sdl2::render::Texture;
-use sdl2::render::TextureCreator;
+use sdl::sdl2::image::LoadTexture;
+use sdl::sdl2::render::Texture;
+use sdl::sdl2::render::TextureCreator;
 use std::borrow::Borrow;
 use std::collections::HashMap;
 use std::fmt::Debug;
@@ -49,7 +49,7 @@ where
             .get(details)
             .cloned()
             .map(Ok)
-	    .unwrap_or_else(|| panic!("Invalid texture ID: {:?}", details))
+            .unwrap_or_else(|| panic!("Invalid texture ID: {:?}", details))
     }
 }
 
