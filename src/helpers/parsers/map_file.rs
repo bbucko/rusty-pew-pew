@@ -26,8 +26,8 @@ pub fn parse() -> (Player, Vec<Box<GameObject>>, HashMap<String, TextureWrapper>
     let mut properties: HashMap<String, String> = HashMap::new();
 
     let mut player = None;
-    let mut game_objects: Vec<Box<GameObject>> = Vec::new();
-    let mut texture_wrappers: HashMap<String, TextureWrapper> = HashMap::new();
+    let mut game_objects = Vec::new();
+    let mut texture_wrappers = HashMap::new();
 
     for e in parser("assets/map1.tmx") {
         match e {
@@ -104,8 +104,8 @@ pub fn parse() -> (Player, Vec<Box<GameObject>>, HashMap<String, TextureWrapper>
                             if object_type == "Player" {
                                 let x = properties.get("x").map_or(0, |s| s.parse().unwrap());
                                 let y = properties.get("y").map_or(0, |s| s.parse().unwrap());
-                                println!("{:?} :: {:?}", x, y);
-                                player = Some(Player::new(Pos::new(x as f32, y as f32)));
+
+                                player = Some(Player::new(0, Pos::new(x as f32, y as f32)));
                             } else {
                                 game_objects.push(factory::create(&properties));
                             }
@@ -158,10 +158,19 @@ pub fn parse() -> (Player, Vec<Box<GameObject>>, HashMap<String, TextureWrapper>
 
 #[cfg(test)]
 mod tests {
+    use game::Id;
     use helpers::parsers;
 
     #[test]
     fn test_parsing() {
-        let (player, game_objects, texture_wrappers) = parsers::map_file::parse();
+        let (_player, game_objects, texture_wrappers) = parsers::map_file::parse();
+        assert_eq!(game_objects.len(), 2);
+
+        let ids: Vec<Id> = game_objects.iter().map(|s| s.id()).collect();
+
+        assert_eq!(ids[0], 1);
+        assert_eq!(ids[1], 2);
+
+        assert_eq!(texture_wrappers.len(), 2);
     }
 }

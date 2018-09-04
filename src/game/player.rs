@@ -1,4 +1,5 @@
 use game::GameObject;
+use game::Id;
 use game::Pos;
 use game::Renderer;
 use game::Transl;
@@ -7,11 +8,16 @@ use game::Transl;
 pub struct Player {
     position: Pos,
     frame: u8,
+    id: Id,
 }
 
 impl Player {
-    pub fn new(position: Pos) -> Self {
-        Player { position, frame: 0 }
+    pub fn new(id: Id, position: Pos) -> Self {
+        Player {
+            position,
+            frame: 0,
+            id,
+        }
     }
 
     pub fn up(&mut self) {
@@ -24,6 +30,10 @@ impl Player {
 }
 
 impl GameObject for Player {
+    fn id(&self) -> Id {
+        self.id
+    }
+
     fn draw(&self, renderer: &mut Renderer) {
         renderer.draw_frame("plane", self.position, self.frame);
     }
@@ -40,7 +50,7 @@ mod tests {
 
     #[test]
     fn test_player_up() {
-        let mut player = Player::new(Pos::new(10.0, 0.0));
+        let mut player = Player::new(0, Pos::new(10.0, 0.0));
         assert_eq!(player.position, Pos::new(10.0, 0.0));
 
         player.up();
@@ -49,7 +59,7 @@ mod tests {
 
     #[test]
     fn test_player_down() {
-        let mut player = Player::new(Pos::new(10.0, 0.0));
+        let mut player = Player::new(0, Pos::new(10.0, 0.0));
         assert_eq!(player.position, Pos::new(10.0, 0.0));
 
         player.down();

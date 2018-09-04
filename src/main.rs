@@ -1,6 +1,9 @@
 extern crate base64;
 extern crate cgmath;
+extern crate core;
 
+use game::Scene;
+use helpers::parsers;
 use std::thread;
 use std::time::Duration;
 use std::time::SystemTime;
@@ -19,10 +22,14 @@ pub fn main() {
     let (canvas, texture_creator) = sdl::Renderer::init(&engine);
     let texture_manager = sdl::TextureManager::new(&texture_creator);
 
-    let video = sdl::Renderer::new(canvas, texture_manager);
+    let (player, game_objects, texture_wrappers) = parsers::map_file::parse();
+
+    let scene = Scene::new(player, game_objects);
+
+    let video = sdl::Renderer::new(canvas, texture_manager, texture_wrappers);
     let input_handler = sdl::InputHandler::new(&engine);
 
-    let mut game = game::Engine::new(video, input_handler);
+    let mut game = game::Engine::new(video, input_handler, scene);
     let mut frame = 0;
     while game.is_running() {
         println!("tick: {:?}", frame);

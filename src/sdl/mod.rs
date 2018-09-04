@@ -26,7 +26,7 @@ pub struct SDLEngine {
 pub struct Renderer<'a> {
     canvas: Canvas<Window>,
     texture_manager: TextureManager<'a, WindowContext>,
-    texture_wrapper: HashMap<String, TextureWrapper>,
+    texture_wrappers: HashMap<String, TextureWrapper>,
 }
 
 pub struct InputHandler {

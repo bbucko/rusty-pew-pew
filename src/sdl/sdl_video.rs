@@ -1,7 +1,6 @@
-use game::player::Player;
-use game::GameObject;
 use game::Pos;
 use game::Renderer;
+use game::Scene;
 use helpers::parsers;
 use sdl::sdl2::pixels::Color;
 use sdl::sdl2::rect::Rect;
@@ -16,18 +15,10 @@ use sdl::TextureWrapper;
 use std::collections::HashMap;
 
 impl<'a> Renderer for SDLRenderer<'a> {
-    fn update_wrappers(&mut self, wrappers: HashMap<String, TextureWrapper>) {
-        self.texture_wrapper = wrappers;
-    }
-
-    fn render(&mut self, game_objects: &[Box<GameObject>], player: &Player) {
+    fn render(&mut self, scene: &mut Scene) {
         self.canvas.clear();
 
-        player.draw(self);
-
-        for game_object in game_objects {
-            game_object.draw(self);
-        }
+        scene.draw(self);
 
         self.canvas.present();
     }
@@ -38,7 +29,7 @@ impl<'a> Renderer for SDLRenderer<'a> {
 
     fn draw_frame(&mut self, texture_id: &str, position: Pos, frame: u8) {
         let texture_wrapper = self
-            .texture_wrapper
+            .texture_wrappers
             .get(texture_id)
             .expect("Missing texture wrapper");
 
@@ -80,13 +71,17 @@ impl<'a> SDLRenderer<'a> {
         (canvas, texture_creator)
     }
 
-    pub fn new(canvas: Canvas<Window>, mut texture_manager: TextureManager<'a, WindowContext>) -> Self {
+    pub fn new(
+        canvas: Canvas<Window>,
+        mut texture_manager: TextureManager<'a, WindowContext>,
+        texture_wrappers: HashMap<String, TextureWrapper>,
+    ) -> Self {
         Self::load_textures(&mut texture_manager);
 
         Self {
             canvas,
             texture_manager,
-            texture_wrapper: HashMap::new(),
+            texture_wrappers,
         }
     }
 
