@@ -1,40 +1,45 @@
-use game::GameObject;
+use game::Entity;
 use game::Id;
-use game::Pos;
+use game::InputState;
+use game::Position;
 use game::Renderer;
-use game::Transl;
+use game::Translation;
 
 #[derive(Debug)]
 pub struct Player {
-    position: Pos,
+    position: Position,
     frame: u8,
     id: Id,
 }
 
 impl Player {
-    pub fn new(id: Id, position: Pos) -> Self {
-        Player {
-            position,
-            frame: 0,
-            id,
-        }
+    pub fn new(id: Id, position: Position) -> Self {
+        Player { position, frame: 0, id }
     }
 
     pub fn up(&mut self) {
-        self.position += Transl::new(0.0, -1.0);
+        self.position += Translation::new(0.0, -1.0);
     }
 
     pub fn down(&mut self) {
-        self.position += Transl::new(0.0, 1.0);
+        self.position += Translation::new(0.0, 1.0);
     }
 }
 
-impl GameObject for Player {
+impl Entity for Player {
     fn id(&self) -> Id {
         self.id
     }
 
-    fn draw(&self, renderer: &mut Renderer) {
+    fn input(&mut self, input_state: &InputState) {
+        match input_state {
+            2 => self.up(),
+            3 => self.down(),
+            _ => ()
+        }
+    }
+
+    fn draw(&mut self, renderer: &mut Renderer) {
         renderer.draw_frame("plane", self.position, self.frame);
     }
 
@@ -46,23 +51,23 @@ impl GameObject for Player {
 #[cfg(test)]
 mod tests {
     use game::player::Player;
-    use game::Pos;
+    use game::Position;
 
     #[test]
     fn test_player_up() {
-        let mut player = Player::new(0, Pos::new(10.0, 0.0));
-        assert_eq!(player.position, Pos::new(10.0, 0.0));
+        let mut player = Player::new(0, Position::new(10.0, 0.0));
+        assert_eq!(player.position, Position::new(10.0, 0.0));
 
         player.up();
-        assert_eq!(player.position, Pos::new(10.0, -1.0));
+        assert_eq!(player.position, Position::new(10.0, -1.0));
     }
 
     #[test]
     fn test_player_down() {
-        let mut player = Player::new(0, Pos::new(10.0, 0.0));
-        assert_eq!(player.position, Pos::new(10.0, 0.0));
+        let mut player = Player::new(0, Position::new(10.0, 0.0));
+        assert_eq!(player.position, Position::new(10.0, 0.0));
 
         player.down();
-        assert_eq!(player.position, Pos::new(10.0, 1.0));
+        assert_eq!(player.position, Position::new(10.0, 1.0));
     }
 }

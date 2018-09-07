@@ -1,8 +1,6 @@
 use base64::decode;
 use game::factory;
-use game::player::Player;
-use game::GameObject;
-use game::Pos;
+use game::Scene;
 use helpers::parsers::find_attribute;
 use helpers::parsers::inflate::inflate_bytes_zlib;
 use helpers::parsers::parser;
@@ -21,55 +19,38 @@ enum XmlReadingState {
     InMapObjectgroupObject,
 }
 
-pub fn parse() -> (Player, Vec<Box<GameObject>>, HashMap<String, TextureWrapper>) {
+pub fn parse(filename: &str) -> (Scene, HashMap<String, TextureWrapper>) {
     let mut state = XmlReadingState::Root;
     let mut properties: HashMap<String, String> = HashMap::new();
 
-    let mut player = None;
     let mut game_objects = Vec::new();
     let mut texture_wrappers = HashMap::new();
+    let mut tiles = Vec::new();
+    let mut width = 0;
+    let mut height = 0;
 
-    for e in parser("assets/map1.tmx") {
+    for e in parser(filename) {
         match e {
             Ok(XmlEvent::StartElement { name, attributes, .. }) => {
                 let local_name = name.local_name.to_ascii_lowercase();
                 state = match (state, local_name.as_str()) {
-                    (XmlReadingState::Root, "map") => XmlReadingState::InMap,
+                    (XmlReadingState::Root, "map") => {
+                        height = find_attribute(&attributes, "height").expect("Missing tiles height");
+                        width = find_attribute(&attributes, "width").expect("Missing tiles width");
+                        XmlReadingState::InMap
+                    }
                     (XmlReadingState::InMap, "layer") => XmlReadingState::InMapLayer,
                     (XmlReadingState::InMap, "tileset") => XmlReadingState::InMapTileset,
                     (XmlReadingState::InMap, "objectgroup") => XmlReadingState::InMapObjectgroup,
                     (XmlReadingState::InMapObjectgroup, "object") => {
-                        properties.insert(
-                            "name".to_string(),
-                            find_attribute(&attributes, "name").expect("missing name"),
-                        );
-                        properties.insert(
-                            "type".to_string(),
-                            find_attribute(&attributes, "type").expect("missing type"),
-                        );
-
-                        properties.insert(
-                            "width".to_string(),
-                            find_attribute(&attributes, "width").expect("missing width"),
-                        );
-                        properties.insert(
-                            "height".to_string(),
-                            find_attribute(&attributes, "height").expect("missing height"),
-                        );
-
-                        properties.insert(
-                            "x".to_string(),
-                            find_attribute(&attributes, "x").expect("missing X"),
-                        );
-                        properties.insert(
-                            "y".to_string(),
-                            find_attribute(&attributes, "y").expect("missing Y"),
-                        );
+                        let available_keys = ["name", "type", "width", "height", "x", "y"].iter();
+                        properties.extend(available_keys.map(|key| {
+                            let value: String = find_attribute(&attributes, key).expect(&format!("missing {:?}", key));
+                            (key.to_string(), value.clone())
+                        }));
                         XmlReadingState::InMapObjectgroupObject
                     }
-                    (XmlReadingState::InMapObjectgroupObject, "properties") => {
-                        XmlReadingState::InMapObjectgroupObject
-                    }
+                    (XmlReadingState::InMapObjectgroupObject, "properties") => XmlReadingState::InMapObjectgroupObject,
                     (XmlReadingState::InMapObjectgroupObject, "property") => {
                         let name: String = find_attribute(&attributes, "name").expect("missing name");
                         let value: String = find_attribute(&attributes, "value").expect("missing value");
@@ -87,7 +68,8 @@ pub fn parse() -> (Player, Vec<Box<GameObject>>, HashMap<String, TextureWrapper>
             Ok(XmlEvent::Characters(value)) => {
                 if state == XmlReadingState::InMapLayerData {
                     let inflated = decode(value.trim()).unwrap();
-                    let _deflated = inflate_bytes_zlib(&inflated);
+                    let deflated = inflate_bytes_zlib(&inflated);
+                    tiles.extend(deflated.expect("Missing tiles").iter());
                     println!("Parsed layers");
                 }
             }
@@ -99,22 +81,10 @@ pub fn parse() -> (Player, Vec<Box<GameObject>>, HashMap<String, TextureWrapper>
                     (XmlReadingState::InMapTileset, "tileset") => XmlReadingState::InMap,
                     (XmlReadingState::InMapObjectgroup, "objectgroup") => XmlReadingState::InMap,
                     (XmlReadingState::InMapObjectgroupObject, "object") => {
-                        {
-                            let object_type = properties.get("type").expect("Missing type");
-                            if object_type == "Player" {
-                                let x = properties.get("x").map_or(0, |s| s.parse().unwrap());
-                                let y = properties.get("y").map_or(0, |s| s.parse().unwrap());
+                        let result = factory::create(&properties).unwrap();
+                        game_objects.push(result);
 
-                                player = Some(Player::new(0, Pos::new(x as f32, y as f32)));
-                            } else {
-                                game_objects.push(factory::create(&properties));
-                            }
-                        }
-
-                        let texture_id = properties
-                            .get("textureID")
-                            .expect("Missing textureID")
-                            .to_string();
+                        let texture_id = properties.get("textureID").expect("Missing textureID").to_string();
                         let width = properties.get("width").expect("Missing width").parse().unwrap();
                         let height = properties.get("height").expect("Missing height").parse().unwrap();
                         let frames = properties.get("numFrames").map_or(1, |s| s.parse().unwrap());
@@ -129,12 +99,8 @@ pub fn parse() -> (Player, Vec<Box<GameObject>>, HashMap<String, TextureWrapper>
                         properties.clear();
                         XmlReadingState::InMapObjectgroup
                     }
-                    (XmlReadingState::InMapObjectgroupObject, "properties") => {
-                        XmlReadingState::InMapObjectgroupObject
-                    }
-                    (XmlReadingState::InMapObjectgroupObject, "property") => {
-                        XmlReadingState::InMapObjectgroupObject
-                    }
+                    (XmlReadingState::InMapObjectgroupObject, "properties") => XmlReadingState::InMapObjectgroupObject,
+                    (XmlReadingState::InMapObjectgroupObject, "property") => XmlReadingState::InMapObjectgroupObject,
                     (XmlReadingState::InMapLayerData, "data") => XmlReadingState::InMapLayer,
                     _ => {
                         println!("end of unknown element: {:?} :: {:?}", local_name, state);
@@ -149,11 +115,8 @@ pub fn parse() -> (Player, Vec<Box<GameObject>>, HashMap<String, TextureWrapper>
             _ => {}
         }
     }
-    (
-        player.expect("Player was not created"),
-        game_objects,
-        texture_wrappers,
-    )
+
+    (Scene::new(game_objects, tiles, width, height), texture_wrappers)
 }
 
 #[cfg(test)]
@@ -163,13 +126,16 @@ mod tests {
 
     #[test]
     fn test_parsing() {
-        let (_player, game_objects, texture_wrappers) = parsers::map_file::parse();
-        assert_eq!(game_objects.len(), 2);
+        let (scene, texture_wrappers) = parsers::map_file::parse("assets/map1.tmx");
+        assert_eq!(scene.game_objects.len(), 3);
 
-        let ids: Vec<Id> = game_objects.iter().map(|s| s.id()).collect();
+        let ids: Vec<Id> = scene.game_objects.iter()
+            .map(|s| s.id())
+            .collect();
 
         assert_eq!(ids[0], 1);
         assert_eq!(ids[1], 2);
+        assert_eq!(ids[1], 3);
 
         assert_eq!(texture_wrappers.len(), 2);
     }

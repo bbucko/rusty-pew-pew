@@ -1,4 +1,4 @@
-use game::Pos;
+use game::Position;
 use game::Renderer;
 use game::Scene;
 use helpers::parsers;
@@ -23,20 +23,14 @@ impl<'a> Renderer for SDLRenderer<'a> {
         self.canvas.present();
     }
 
-    fn draw_texture(&mut self, texture_id: &str, position: Pos) {
+    fn draw_texture(&mut self, texture_id: &str, position: Position) {
         self.draw_frame(texture_id, position, 0);
     }
 
-    fn draw_frame(&mut self, texture_id: &str, position: Pos, frame: u8) {
-        let texture_wrapper = self
-            .texture_wrappers
-            .get(texture_id)
-            .expect("Missing texture wrapper");
+    fn draw_frame(&mut self, texture_id: &str, position: Position, frame: u8) {
+        let texture_wrapper = self.texture_wrappers.get(texture_id).expect("Missing texture wrapper");
 
-        let texture = self
-            .texture_manager
-            .load(texture_id)
-            .expect("Error loading texture");
+        let texture = self.texture_manager.load(texture_id).expect("Error loading texture");
 
         let src_rect = texture_wrapper.src_rect(frame);
         let dst_rect = Rect::new(
@@ -67,7 +61,6 @@ impl<'a> SDLRenderer<'a> {
         canvas.set_draw_color(Color::RGB(0, 0, 0));
 
         let texture_creator = canvas.texture_creator();
-
         (canvas, texture_creator)
     }
 

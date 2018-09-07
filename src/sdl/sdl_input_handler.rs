@@ -1,14 +1,12 @@
-use game::Event as GameEvent;
 use game::InputHandler;
+use game::InputState;
+use sdl::InputHandler as SDLInputHandler;
 use sdl::sdl2::event::Event;
 use sdl::sdl2::keyboard::Keycode;
-use sdl::InputHandler as SDLInputHandler;
 use sdl::SDLEngine;
 
 impl InputHandler for SDLInputHandler {
-    fn handle(&mut self) -> Vec<GameEvent> {
-        let mut vec = Vec::new();
-
+    fn events(&mut self) -> Option<InputState> {
         for event in self.event_pump.poll_iter() {
             match event {
                 Event::Quit { .. }
@@ -16,14 +14,11 @@ impl InputHandler for SDLInputHandler {
                     keycode: Some(Keycode::Escape),
                     ..
                 } => {
-                    vec.push(1);
+                    return Some(1);
                 }
-                Event::KeyDown {
-                    keycode: Some(key), ..
-                } => {
+                Event::KeyDown { keycode: Some(key), .. } => {
                     println!("key pressed: {:?}", key.name());
-                    let event_id = 2;
-                    vec.push(event_id);
+                    return Some(2);
                 }
                 Event::MouseMotion { .. }
                 | Event::MouseWheel { .. }
@@ -36,7 +31,7 @@ impl InputHandler for SDLInputHandler {
                 }
             }
         }
-        vec
+        None
     }
 }
 

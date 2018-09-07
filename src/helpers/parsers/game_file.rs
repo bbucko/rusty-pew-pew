@@ -1,4 +1,3 @@
-use helpers::parsers::element_is;
 use helpers::parsers::find_attribute;
 use helpers::parsers::parser;
 use helpers::parsers::xml::reader::XmlEvent;
@@ -18,30 +17,27 @@ pub fn parse(textures: &mut Vec<(String, String)>) {
     for e in parser {
         match e {
             Ok(XmlEvent::StartElement { name, attributes, .. }) => {
-                if state == XmlReadingState::Root {
-                    if element_is(&name, "play") {
-                        state = XmlReadingState::InPlay
-                    }
-                } else if state == XmlReadingState::InPlay {
-                    if element_is(&name, "textures") {
-                        state = XmlReadingState::InPlayTextures;
-                    }
-                } else if state == XmlReadingState::InPlayTextures {
-                    if element_is(&name, "texture") {
+                let local_name = name.local_name.to_ascii_lowercase();
+                state = match (state, local_name.as_str()) {
+                    (XmlReadingState::Root, "play") => XmlReadingState::InPlay,
+                    (XmlReadingState::InPlay, "textures") => XmlReadingState::InPlayTextures,
+                    (XmlReadingState::InPlayTextures, "texture") => {
                         let key: String = find_attribute(&attributes, "id").unwrap();
                         let filename = find_attribute(&attributes, "filename").unwrap();
 
                         textures.push((key.clone(), filename));
+                        XmlReadingState::InPlayTextures
                     }
+                    _ => state,
                 }
             }
-            Ok(XmlEvent::EndElement { name, .. }) => {
-                if state == XmlReadingState::InPlayTextures && element_is(&name, "textures") {
-                    state = XmlReadingState::InPlay;
-                }
-
-                if element_is(&name, "play") {
-                    state = XmlReadingState::Root;
+            Ok(XmlEvent::EndElement { name }) => {
+                let local_name = name.local_name.to_ascii_lowercase();
+                state = match (state, local_name.as_str()) {
+                    (XmlReadingState::InPlay, "play") => XmlReadingState::Root,
+                    (XmlReadingState::InPlayTextures, "textures") => XmlReadingState::InPlay,
+                    (XmlReadingState::InPlayTextures, "texture") => XmlReadingState::InPlayTextures,
+                    _ => state,
                 }
             }
             Err(e) => {

@@ -1,26 +1,29 @@
-use game::GameObject;
+use game::Entity;
 use game::Id;
-use game::Pos;
+use game::InputState;
+use game::Position;
 use game::Renderer;
 
 #[derive(Debug)]
 pub struct Enemy {
-    position: Pos,
+    position: Position,
     id: Id,
 }
 
 impl Enemy {
-    pub fn new(id: Id, position: Pos) -> Enemy {
+    pub fn new(id: Id, position: Position) -> Enemy {
         Enemy { position, id }
     }
 }
 
-impl GameObject for Enemy {
+impl Entity for Enemy {
     fn id(&self) -> Id {
         self.id
     }
 
-    fn draw(&self, renderer: &mut Renderer) {
+    fn input(&mut self, _input_state: &InputState) {}
+
+    fn draw(&mut self, renderer: &mut Renderer) {
         renderer.draw_texture("whitePlane", self.position);
     }
 

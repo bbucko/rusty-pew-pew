@@ -43,7 +43,7 @@ pub struct TextureWrapper {
 }
 
 impl SDLEngine {
-    pub fn new() -> SDLEngine {
+    pub fn init() -> SDLEngine {
         let sdl = sdl2_init().expect("Error initializing SDL2");
         let _sdl_image = sdl2_image_init(INIT_PNG | INIT_JPG).expect("Error initializing SDL2 Image");
 

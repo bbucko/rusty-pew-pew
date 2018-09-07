@@ -2,14 +2,13 @@ extern crate base64;
 extern crate cgmath;
 extern crate core;
 
-use game::Scene;
 use helpers::parsers;
 use std::thread;
 use std::time::Duration;
 use std::time::SystemTime;
 
 mod game;
-pub mod helpers;
+mod helpers;
 mod sdl;
 
 const FPS: u8 = 60;
@@ -17,15 +16,12 @@ const FPS: u8 = 60;
 pub fn main() {
     let delay: Duration = Duration::new(0, 1000000000 / FPS as u32);
 
-    let engine = sdl::SDLEngine::new();
+    let (scene, texture_wrappers) = parsers::map_file::parse("assets/map1.tmx");
 
+    let engine = sdl::SDLEngine::init();
     let (canvas, texture_creator) = sdl::Renderer::init(&engine);
+
     let texture_manager = sdl::TextureManager::new(&texture_creator);
-
-    let (player, game_objects, texture_wrappers) = parsers::map_file::parse();
-
-    let scene = Scene::new(player, game_objects);
-
     let video = sdl::Renderer::new(canvas, texture_manager, texture_wrappers);
     let input_handler = sdl::InputHandler::new(&engine);
 
