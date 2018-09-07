@@ -1,20 +1,19 @@
 use game::Entity;
-use game::Id;
 use game::InputState;
 use game::Position;
 use game::Renderer;
+use game::GameState;
 use game::Translation;
 
 #[derive(Debug)]
-pub struct Player {
+pub struct PlayerState {
     position: Position,
     frame: u8,
-    id: Id,
 }
 
-impl Player {
-    pub fn new(id: Id, position: Position) -> Self {
-        Player { position, frame: 0, id }
+impl PlayerState {
+    pub fn new(position: Position) -> Self {
+        PlayerState { position, frame: 0 }
     }
 
     pub fn up(&mut self) {
@@ -26,11 +25,7 @@ impl Player {
     }
 }
 
-impl Entity for Player {
-    fn id(&self) -> Id {
-        self.id
-    }
-
+impl Entity for PlayerState {
     fn input(&mut self, input_state: &InputState) {
         match input_state {
             2 => self.up(),
@@ -43,19 +38,19 @@ impl Entity for Player {
         renderer.draw_frame("plane", self.position, self.frame);
     }
 
-    fn update(&mut self) {
+    fn update(&mut self, _scene: &mut GameState) {
         self.frame = (self.frame + 1) % 3;
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use game::player::Player;
+    use game::player::PlayerState;
     use game::Position;
 
     #[test]
     fn test_player_up() {
-        let mut player = Player::new(0, Position::new(10.0, 0.0));
+        let mut player = PlayerState::new(Position::new(10.0, 0.0));
         assert_eq!(player.position, Position::new(10.0, 0.0));
 
         player.up();
@@ -64,7 +59,7 @@ mod tests {
 
     #[test]
     fn test_player_down() {
-        let mut player = Player::new(0, Position::new(10.0, 0.0));
+        let mut player = PlayerState::new(Position::new(10.0, 0.0));
         assert_eq!(player.position, Position::new(10.0, 0.0));
 
         player.down();

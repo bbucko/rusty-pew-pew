@@ -1,6 +1,6 @@
 use base64::decode;
 use game::factory;
-use game::Scene;
+use game::GameState;
 use helpers::parsers::find_attribute;
 use helpers::parsers::inflate::inflate_bytes_zlib;
 use helpers::parsers::parser;
@@ -19,7 +19,7 @@ enum XmlReadingState {
     InMapObjectgroupObject,
 }
 
-pub fn parse(filename: &str) -> (Scene, HashMap<String, TextureWrapper>) {
+pub fn parse(filename: &str) -> (GameState, HashMap<String, TextureWrapper>) {
     let mut state = XmlReadingState::Root;
     let mut properties: HashMap<String, String> = HashMap::new();
 
@@ -81,8 +81,8 @@ pub fn parse(filename: &str) -> (Scene, HashMap<String, TextureWrapper>) {
                     (XmlReadingState::InMapTileset, "tileset") => XmlReadingState::InMap,
                     (XmlReadingState::InMapObjectgroup, "objectgroup") => XmlReadingState::InMap,
                     (XmlReadingState::InMapObjectgroupObject, "object") => {
-                        let result = factory::create(&properties).unwrap();
-                        game_objects.push(result);
+                        let result = factory::create_game_object(&properties).unwrap();
+                        game_objects.push(Some(result));
 
                         let texture_id = properties.get("textureID").expect("Missing textureID").to_string();
                         let width = properties.get("width").expect("Missing width").parse().unwrap();
@@ -116,7 +116,7 @@ pub fn parse(filename: &str) -> (Scene, HashMap<String, TextureWrapper>) {
         }
     }
 
-    (Scene::new(game_objects, tiles, width, height), texture_wrappers)
+    (GameState::new(game_objects, tiles, width, height), texture_wrappers)
 }
 
 #[cfg(test)]
@@ -129,13 +129,15 @@ mod tests {
         let (scene, texture_wrappers) = parsers::map_file::parse("assets/map1.tmx");
         assert_eq!(scene.game_objects.len(), 3);
 
-        let ids: Vec<Id> = scene.game_objects.iter()
-            .map(|s| s.id())
+        let ids: Vec<Id> = scene.game_objects.into_iter()
+            .filter(|s| s.is_some())
+            .map(|maybe| maybe.unwrap())
+            .map(|game_object| game_object.id())
             .collect();
 
         assert_eq!(ids[0], 1);
         assert_eq!(ids[1], 2);
-        assert_eq!(ids[1], 3);
+        assert_eq!(ids[2], 3);
 
         assert_eq!(texture_wrappers.len(), 2);
     }

@@ -1,6 +1,7 @@
+use game::Entity;
+use game::GameObject;
 use game::Position;
 use game::Renderer;
-use game::Scene;
 use helpers::parsers;
 use sdl::sdl2::pixels::Color;
 use sdl::sdl2::rect::Rect;
@@ -8,17 +9,21 @@ use sdl::sdl2::render::Canvas;
 use sdl::sdl2::render::TextureCreator;
 use sdl::sdl2::video::Window;
 use sdl::sdl2::video::WindowContext;
-use sdl::Renderer as SDLRenderer;
 use sdl::SDLEngine;
+use sdl::SDLRenderer as SDLRenderer;
 use sdl::TextureManager;
 use sdl::TextureWrapper;
 use std::collections::HashMap;
 
 impl<'a> Renderer for SDLRenderer<'a> {
-    fn render(&mut self, scene: &mut Scene) {
+    fn render(&mut self, game_objects: &mut Vec<Option<GameObject>>) {
         self.canvas.clear();
 
-        scene.draw(self);
+        for game_object in game_objects {
+            if let Some(game_object) = game_object {
+                game_object.draw(self);
+            }
+        }
 
         self.canvas.present();
     }
@@ -64,11 +69,9 @@ impl<'a> SDLRenderer<'a> {
         (canvas, texture_creator)
     }
 
-    pub fn new(
-        canvas: Canvas<Window>,
-        mut texture_manager: TextureManager<'a, WindowContext>,
-        texture_wrappers: HashMap<String, TextureWrapper>,
-    ) -> Self {
+    pub fn new(canvas: Canvas<Window>,
+               mut texture_manager: TextureManager<'a, WindowContext>,
+               texture_wrappers: HashMap<String, TextureWrapper>) -> Self {
         Self::load_textures(&mut texture_manager);
 
         Self {

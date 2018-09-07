@@ -1,12 +1,12 @@
 use game::InputHandler;
 use game::InputState;
-use sdl::InputHandler as SDLInputHandler;
+use sdl::SDLInputHandler as SDLInputHandler;
 use sdl::sdl2::event::Event;
 use sdl::sdl2::keyboard::Keycode;
 use sdl::SDLEngine;
 
 impl InputHandler for SDLInputHandler {
-    fn events(&mut self) -> Option<InputState> {
+    fn capture(&mut self) -> Option<InputState> {
         for event in self.event_pump.poll_iter() {
             match event {
                 Event::Quit { .. }
