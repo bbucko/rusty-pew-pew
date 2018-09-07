@@ -132,7 +132,7 @@ mod tests {
         let ids: Vec<Id> = scene.game_objects.into_iter()
             .filter(|s| s.is_some())
             .map(|maybe| maybe.unwrap())
-            .map(|game_object| game_object.id())
+            .map(|game_object| game_object.id)
             .collect();
 
         assert_eq!(ids[0], 1);

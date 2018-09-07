@@ -1,17 +1,17 @@
 use cgmath::Vector2;
 use game::enemy::EnemyState;
 use game::player::PlayerState;
-use std::fmt::Debug;
 
 mod enemy;
 pub mod factory;
 pub mod player;
 mod scene;
 
-pub type InputState = u8;
+
+//pub type GameEvent = u8;
 pub type Position = Vector2<f32>;
-pub type Translation = Vector2<f32>;
-//pub type Velocity = Vector2<f32>;
+//pub type Translation = Vector2<f32>;
+pub type Velocity = Vector2<f32>;
 pub type Id = usize;
 
 pub trait Renderer {
@@ -20,23 +20,29 @@ pub trait Renderer {
     fn draw_frame(&mut self, texture_id: &str, position: Position, frame: u8);
 }
 
+#[derive(Debug, PartialEq)]
+pub enum InputState {
+    Up,
+    Down,
+    Left,
+    Right,
+    Shoot,
+    Quit,
+}
+
 pub trait InputHandler {
-    fn capture(&mut self) -> Option<InputState>;
+    fn capture(&mut self) -> Vec<InputState>;
 }
 
 #[derive(Debug)]
 pub struct GameObject {
-    id: Id,
-    player: Option<PlayerState>,
-    enemy: Option<EnemyState>,
+    pub id: Id,
+    pub player: Option<PlayerState>,
+    pub enemy: Option<EnemyState>,
 }
 
 impl GameObject {
-    pub fn id(&self) -> Id { self.id }
-}
-
-impl Entity for GameObject {
-    fn input(&mut self, input_state: &InputState) {
+    pub fn input(&mut self, input_state: &Vec<InputState>) {
         if let Some(ref mut player) = self.player {
             player.input(input_state)
         }
@@ -46,7 +52,7 @@ impl Entity for GameObject {
         }
     }
 
-    fn draw(&mut self, renderer: &mut Renderer) {
+    pub fn draw(&mut self, renderer: &mut Renderer) {
         if let Some(ref mut player) = self.player {
             player.draw(renderer)
         }
@@ -56,23 +62,15 @@ impl Entity for GameObject {
         }
     }
 
-    fn update(&mut self, scene: &mut GameState) {
+    pub fn update(&mut self) {
         if let Some(ref mut player) = self.player {
-            player.update(scene)
+            player.update()
         }
 
         if let Some(ref mut enemy) = self.enemy {
-            enemy.update(scene)
+            enemy.update()
         }
     }
-}
-
-pub trait Entity: Debug {
-    fn input(&mut self, input_state: &InputState);
-
-    fn draw(&mut self, renderer: &mut Renderer);
-
-    fn update(&mut self, scene: &mut GameState);
 }
 
 pub struct Scene {

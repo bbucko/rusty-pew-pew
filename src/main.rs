@@ -4,7 +4,6 @@ extern crate core;
 #[macro_use]
 extern crate lazy_static;
 
-use game::Entity;
 use game::GameState;
 use game::InputHandler;
 use game::InputState;
@@ -40,13 +39,15 @@ pub fn main() {
     let renderer = &mut sdl::SDLRenderer::new(canvas, texture_manager, texture_wrappers);
 
     loop {
+//        println!("tick");
         let frame_start = SystemTime::now();
+        let inputs = input_handler.capture();
 
-        match input_handler.capture() {
-            Some(1) => break,
-            Some(i) => handle_input(scene, i),
-            _ => {}
+        if inputs.contains(&InputState::Quit) {
+            break;
         }
+
+        handle_input(scene, &inputs);
 
         update(scene);
 
@@ -72,16 +73,15 @@ fn draw(scene: &mut GameState, renderer: &mut Renderer) {
 fn update(scene: &mut GameState) {
     for game_object in &mut scene.game_objects {
         if let Some(game_object) = game_object {
-            println!("GameObject update: {:?}", game_object.id());
-//            game_object.update(scene.game);
+            game_object.update();
         }
     }
 }
 
-fn handle_input(scene: &mut GameState, input_state: InputState) {
+fn handle_input(scene: &mut GameState, input_state: &Vec<InputState>) {
     for game_object in &mut scene.game_objects {
         if let Some(game_object) = game_object {
-            game_object.input(&input_state);
+            game_object.input(input_state);
         }
     }
 }

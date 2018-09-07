@@ -1,4 +1,3 @@
-use game::Entity;
 use game::GameObject;
 use game::Position;
 use game::Renderer;
