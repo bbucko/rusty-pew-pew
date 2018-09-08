@@ -1,12 +1,10 @@
 use cgmath::Vector2;
-use game::enemy::EnemyState;
-use game::player::PlayerState;
+use game::states::BulletState;
+use game::states::EnemyState;
+use game::states::PlayerState;
 
-mod enemy;
-pub mod factory;
-pub mod player;
+pub mod states;
 mod scene;
-
 
 //pub type GameEvent = u8;
 pub type Position = Vector2<f32>;
@@ -39,37 +37,45 @@ pub struct GameObject {
     pub id: Id,
     pub player: Option<PlayerState>,
     pub enemy: Option<EnemyState>,
+    pub bullet: Option<BulletState>,
 }
 
 impl GameObject {
     pub fn input(&mut self, input_state: &Vec<InputState>) {
         if let Some(ref mut player) = self.player {
-            player.input(input_state)
+            player.input(input_state);
         }
 
         if let Some(ref mut enemy) = self.enemy {
-            enemy.input(input_state)
+            enemy.input(input_state);
         }
     }
 
     pub fn draw(&mut self, renderer: &mut Renderer) {
         if let Some(ref mut player) = self.player {
-            player.draw(renderer)
+            player.draw(renderer);
         }
 
         if let Some(ref mut enemy) = self.enemy {
-            enemy.draw(renderer)
+            enemy.draw(renderer);
         }
     }
 
-    pub fn update(&mut self) {
-        if let Some(ref mut player) = self.player {
-            player.update()
+    pub fn is_destroyed(&self) -> bool {
+        if let Some(ref player) = self.player {
+            return player.is_destroyed;
         }
 
-        if let Some(ref mut enemy) = self.enemy {
-            enemy.update()
+        if let Some(ref enemy) = self.enemy {
+            return enemy.is_destroyed;
         }
+
+        return true;
+    }
+
+    pub fn check_collision(&self, object: &GameObject) -> bool {
+        println!("Checking collision: {:?} with {:?}", self, object);
+        false
     }
 }
 

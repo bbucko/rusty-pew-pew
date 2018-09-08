@@ -1,5 +1,4 @@
 use base64::decode;
-use game::factory;
 use game::GameState;
 use helpers::parsers::find_attribute;
 use helpers::parsers::inflate::inflate_bytes_zlib;
@@ -7,6 +6,7 @@ use helpers::parsers::parser;
 use helpers::parsers::xml::reader::XmlEvent;
 use sdl::TextureWrapper;
 use std::collections::HashMap;
+use game::states;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 enum XmlReadingState {
@@ -81,7 +81,7 @@ pub fn parse(filename: &str) -> (GameState, HashMap<String, TextureWrapper>) {
                     (XmlReadingState::InMapTileset, "tileset") => XmlReadingState::InMap,
                     (XmlReadingState::InMapObjectgroup, "objectgroup") => XmlReadingState::InMap,
                     (XmlReadingState::InMapObjectgroupObject, "object") => {
-                        let result = factory::create_game_object(&properties).unwrap();
+                        let result = states::create_game_object(&properties).unwrap();
                         game_objects.push(Some(result));
 
                         let texture_id = properties.get("textureID").expect("Missing textureID").to_string();
