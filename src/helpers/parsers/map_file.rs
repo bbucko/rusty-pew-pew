@@ -45,7 +45,7 @@ pub fn parse(filename: &str) -> (GameState, HashMap<String, TextureWrapper>) {
                     (XmlReadingState::InMapObjectgroup, "object") => {
                         let available_keys = ["name", "type", "width", "height", "x", "y"].iter();
                         properties.extend(available_keys.map(|key| {
-                            let value: String = find_attribute(&attributes, key).expect(&format!("missing {:?}", key));
+                            let value: String = find_attribute(&attributes, key).expect(format!("missing {:?}", key).as_str());
                             (key.to_string(), value.clone())
                         }));
                         XmlReadingState::InMapObjectgroupObject

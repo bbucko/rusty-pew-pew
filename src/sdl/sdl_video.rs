@@ -15,7 +15,7 @@ use sdl::TextureWrapper;
 use std::collections::HashMap;
 
 impl<'a> Renderer for SDLRenderer<'a> {
-    fn render(&mut self, game_objects: &mut Vec<Option<GameObject>>) {
+    fn render(&mut self, game_objects: &mut [Option<GameObject>]) {
         self.canvas.clear();
 
         for game_object in game_objects {

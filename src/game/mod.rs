@@ -4,16 +4,15 @@ use game::states::EnemyState;
 use game::states::PlayerState;
 
 pub mod states;
+mod engine;
 mod scene;
 
-//pub type GameEvent = u8;
 pub type Position = Vector2<f32>;
-//pub type Translation = Vector2<f32>;
 pub type Velocity = Vector2<f32>;
 pub type Id = usize;
 
 pub trait Renderer {
-    fn render(&mut self, scene: &mut Vec<Option<GameObject>>);
+    fn render(&mut self, game_objects: &mut [Option<GameObject>]);
     fn draw_texture(&mut self, texture_id: &str, position: Position);
     fn draw_frame(&mut self, texture_id: &str, position: Position, frame: u8);
 }
@@ -32,7 +31,7 @@ pub trait InputHandler {
     fn capture(&mut self) -> Vec<InputState>;
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct GameObject {
     pub id: Id,
     pub player: Option<PlayerState>,
@@ -41,7 +40,7 @@ pub struct GameObject {
 }
 
 impl GameObject {
-    pub fn input(&mut self, input_state: &Vec<InputState>) {
+    pub fn input(&mut self, input_state: &[InputState]) {
         if let Some(ref mut player) = self.player {
             player.input(input_state);
         }
@@ -61,7 +60,7 @@ impl GameObject {
         }
     }
 
-    pub fn is_destroyed(&self) -> bool {
+    fn is_destroyed(&self) -> bool {
         if let Some(ref player) = self.player {
             return player.is_destroyed;
         }
@@ -70,13 +69,20 @@ impl GameObject {
             return enemy.is_destroyed;
         }
 
-        return true;
+        false
     }
 
-    pub fn check_collision(&self, object: &GameObject) -> bool {
+    fn check_collision(&self, object: &GameObject) -> bool {
         println!("Checking collision: {:?} with {:?}", self, object);
         false
     }
+}
+
+pub struct Engine<R: Renderer, I: InputHandler> {
+    game_state: GameState,
+    renderer: R,
+    input_handler: I,
+    pub is_running: bool,
 }
 
 pub struct Scene {

@@ -1,6 +1,5 @@
 use game::GameObject;
 use game::GameState;
-use game::Id;
 use game::InputState;
 use game::Position;
 use game::Renderer;
@@ -19,7 +18,7 @@ pub fn create_game_object(properties: &HashMap<String, String>) -> Result<GameOb
 
     let position = Position::new(x, y);
 
-    let id = Id::from(OBJECT_COUNTER.fetch_add(1, atomic::Ordering::SeqCst));
+    let id = OBJECT_COUNTER.fetch_add(1, atomic::Ordering::SeqCst);
     let mut default_object = GameObject { id, player: None, enemy: None, bullet: None };
 
     match object_type {
@@ -39,7 +38,7 @@ fn parse_float(properties: &HashMap<String, String>, attribute_name: &str) -> Re
         .map_err(|e: ParseFloatError| e.to_string())
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct PlayerState {
     position: Position,
     frame: u8,
@@ -53,7 +52,7 @@ impl PlayerState {
         PlayerState { position, frame: 0, is_shooting: false, is_destroyed: false, velocity: Velocity::new(0.0, 0.0) }
     }
 
-    pub fn input(&mut self, input_state: &Vec<InputState>) {
+    pub fn input(&mut self, input_state: &[InputState]) {
         let mut new_velocity = Velocity::new(0.0, 0.0);
         for input in input_state {
             match input {
@@ -79,7 +78,7 @@ impl PlayerState {
 }
 
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct EnemyState {
     position: Position,
     pub is_destroyed: bool,
@@ -90,7 +89,7 @@ impl EnemyState {
         EnemyState { position, is_destroyed: false }
     }
 
-    pub fn input(&mut self, _input_state: &Vec<InputState>) {}
+    pub fn input(&mut self, _input_state: &[InputState]) {}
 
     pub fn draw(&mut self, renderer: &mut Renderer) {
         renderer.draw_texture("whitePlane", self.position);
@@ -101,7 +100,7 @@ impl EnemyState {
     pub fn update(&mut self) {}
 }
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub struct BulletState {
     position: Position,
 
@@ -109,6 +108,6 @@ pub struct BulletState {
 
 impl BulletState {
     pub fn player_shoots(player: &PlayerState) -> BulletState {
-        BulletState { position: player.position.clone() }
+        BulletState { position: player.position }
     }
 }

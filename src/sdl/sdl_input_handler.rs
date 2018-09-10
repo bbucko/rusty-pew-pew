@@ -41,6 +41,6 @@ impl SDLInputHandler {
                 return true;
             }
         }
-        return false;
+        false
     }
 }
