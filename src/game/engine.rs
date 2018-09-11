@@ -4,10 +4,10 @@ use game::GameState;
 use game::InputHandler;
 use game::InputState;
 use game::Renderer;
-use game::states::BulletState;
 
 impl<R, I> Engine<R, I> where R: Renderer, I: InputHandler {
     pub fn new(game_state: GameState, renderer: R, input_handler: I) -> Engine<R, I> {
+        println!("Created engine");
         Engine { game_state, is_running: true, renderer, input_handler }
     }
 
@@ -35,18 +35,20 @@ impl<R, I> Engine<R, I> where R: Renderer, I: InputHandler {
 
         Self::check_collisions(&mut self.game_state.game_objects);
 
-        Self::remove_destroyed_objects(&mut self.game_state.game_objects);
+        let _removed = Self::remove_destroyed_objects(&mut self.game_state.game_objects);
     }
 
-    fn check_collisions(game_objects: &[Option<GameObject>]) {
-        for outer in game_objects {
-            if let Some(game_object) = outer {
-                for inner in game_objects {
-                    if let Some(inner) = inner {
-                        if inner.id != game_object.id {
-                            game_object.check_collision(&inner);
-                        }
-                    }
+    fn check_collisions(game_objects: &mut Vec<Option<GameObject>>) {
+        for i in 0..game_objects.len() {
+            let (_, me, back) = {
+                let (first, second) = game_objects.split_at_mut(i);
+                let (me, rest) = second.split_first_mut().unwrap();
+                (first, me, rest)
+            };
+
+            if let Some(me) = me {
+                for candidate in back {
+                    me.check_collision(candidate);
                 }
             }
         }
@@ -56,18 +58,17 @@ impl<R, I> Engine<R, I> where R: Renderer, I: InputHandler {
         let mut bullets = Vec::new();
 
         for game_object in game_objects.iter_mut() {
-            if let Some(obj) = game_object {
-                if let Some(ref mut player) = obj.player {
+            if let Some(ref mut game_object) = game_object {
+                if let Some(ref mut player) = game_object.player {
                     player.update();
 
                     if player.is_shooting {
-                        let new_bullet = GameObject { player: None, enemy: None, bullet: Some(BulletState::player_shoots(&player)), id: 111 };
+                        let new_bullet = player.shoots();
                         bullets.push(Some(new_bullet));
-                        player.is_shooting = false;
                     }
                 }
 
-                if let Some(ref mut enemy) = obj.enemy {
+                if let Some(ref mut enemy) = game_object.enemy {
                     enemy.update();
                 }
             }
@@ -95,7 +96,8 @@ impl<R, I> Engine<R, I> where R: Renderer, I: InputHandler {
     fn should_quit(inputs: &[InputState]) -> bool { inputs.contains(&InputState::Quit) }
 }
 
-mod test {
+#[cfg(test)]
+mod tests {
     use game::Engine;
     use game::GameObject;
     use game::InputHandler;
@@ -122,6 +124,7 @@ mod test {
         }
     }
 
+    #[cfg(test)]
     impl InputHandler for MockInputHandler {
         fn capture(&mut self) -> Vec<InputState> {
             unimplemented!()
@@ -179,5 +182,17 @@ mod test {
 
         //then
         assert_eq!(game_objects[0], None);
+    }
+
+    #[test]
+    fn test_collisions() {
+        //given
+        let mut v1 = vec![
+            Some(GameObject { bullet: None, enemy: None, id: 1, player: None }),
+            Some(GameObject { bullet: None, enemy: None, id: 1, player: None })
+        ];
+
+        //when
+        Engine::<MockRenderer, MockInputHandler>::check_collisions(&mut v1);
     }
 }

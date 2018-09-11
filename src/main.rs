@@ -16,7 +16,7 @@ mod sdl;
 const FPS: u8 = 60;
 
 lazy_static! {
-    static ref DELAY: Duration = Duration::new(0, 1000000000 / FPS as u32);
+    static ref DELAY: Duration = Duration::new(0, 1_000_000_000 / FPS as u32);
 }
 
 pub fn main() {

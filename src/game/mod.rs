@@ -47,6 +47,10 @@ impl GameObject {
 
         if let Some(ref mut enemy) = self.enemy {
             enemy.input(input_state);
+
+            let new_bullet = BulletState::enemy_shoots(enemy);
+            println!("Enemy shoots: {:?}", new_bullet);
+
         }
     }
 
@@ -72,9 +76,14 @@ impl GameObject {
         false
     }
 
-    fn check_collision(&self, object: &GameObject) -> bool {
-        println!("Checking collision: {:?} with {:?}", self, object);
-        false
+    fn check_collision(&self, object: &Option<GameObject>) -> bool {
+        match object {
+            Some(collider) => {
+                println!("Checking collision: {:?} with {:?}", self, collider);
+                true
+            }
+            _ => false
+        }
     }
 }
 

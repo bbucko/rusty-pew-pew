@@ -1,5 +1,6 @@
 use game::GameObject;
 use game::GameState;
+use game::Id;
 use game::InputState;
 use game::Position;
 use game::Renderer;
@@ -11,14 +12,14 @@ use std::sync::atomic::{self, AtomicUsize};
 static OBJECT_COUNTER: AtomicUsize = <AtomicUsize>::new(1);
 
 pub fn create_game_object(properties: &HashMap<String, String>) -> Result<GameObject, String> {
-    let object_type = properties.get("type").expect("Unknown type").as_str();
+    let object_type = properties.get("type").unwrap_or_else(|| panic!("Unknown type")).as_str();
 
     let x = parse_float(properties, "x")?;
     let y = parse_float(properties, "y")?;
 
     let position = Position::new(x, y);
 
-    let id = OBJECT_COUNTER.fetch_add(1, atomic::Ordering::SeqCst);
+    let id = next_id();
     let mut default_object = GameObject { id, player: None, enemy: None, bullet: None };
 
     match object_type {
@@ -30,10 +31,12 @@ pub fn create_game_object(properties: &HashMap<String, String>) -> Result<GameOb
     Ok(default_object)
 }
 
+fn next_id() -> Id { OBJECT_COUNTER.fetch_add(1, atomic::Ordering::SeqCst) }
+
 fn parse_float(properties: &HashMap<String, String>, attribute_name: &str) -> Result<f32, String> {
     properties
         .get(attribute_name)
-        .expect(&format!("Missing: {:?}", attribute_name))
+        .unwrap_or_else(|| panic!("Missing: {:?}", attribute_name))
         .parse()
         .map_err(|e: ParseFloatError| e.to_string())
 }
@@ -75,6 +78,17 @@ impl PlayerState {
         self.frame = (self.frame + 1) % 3;
         self.position += self.velocity;
     }
+
+    pub fn shoots(&mut self) -> GameObject {
+        self.is_shooting = false;
+
+        GameObject {
+            id: next_id(),
+            player: None,
+            enemy: None,
+            bullet: Some(BulletState::player_shoots(self)),
+        }
+    }
 }
 
 
@@ -109,5 +123,9 @@ pub struct BulletState {
 impl BulletState {
     pub fn player_shoots(player: &PlayerState) -> BulletState {
         BulletState { position: player.position }
+    }
+
+    pub fn enemy_shoots(enemy: &EnemyState) -> BulletState {
+        BulletState { position: enemy.position }
     }
 }
