@@ -1,12 +1,13 @@
 use base64::decode;
-use game::GameState;
+use game::GameObject;
+use game::Scene;
+use game::states;
 use helpers::parsers::find_attribute;
 use helpers::parsers::inflate::inflate_bytes_zlib;
 use helpers::parsers::parser;
 use helpers::parsers::xml::reader::XmlEvent;
 use sdl::TextureWrapper;
 use std::collections::HashMap;
-use game::states;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 enum XmlReadingState {
@@ -19,7 +20,7 @@ enum XmlReadingState {
     InMapObjectgroupObject,
 }
 
-pub fn parse(filename: &str) -> (GameState, HashMap<String, TextureWrapper>) {
+pub fn parse(filename: &str) -> (Vec<Option<GameObject>>, Scene, HashMap<String, TextureWrapper>) {
     let mut state = XmlReadingState::Root;
     let mut properties: HashMap<String, String> = HashMap::new();
 
@@ -116,7 +117,7 @@ pub fn parse(filename: &str) -> (GameState, HashMap<String, TextureWrapper>) {
         }
     }
 
-    (GameState::new(game_objects, tiles, width, height), texture_wrappers)
+    (game_objects, Scene::new(width, height, tiles), texture_wrappers)
 }
 
 #[cfg(test)]
@@ -126,10 +127,10 @@ mod tests {
 
     #[test]
     fn test_parsing() {
-        let (scene, texture_wrappers) = parsers::map_file::parse("assets/map1.tmx");
-        assert_eq!(scene.game_objects.len(), 3);
+        let (game_objects, _scene, texture_wrappers) = parsers::map_file::parse("assets/map1.tmx");
+        assert_eq!(game_objects.len(), 3);
 
-        let ids: Vec<Id> = scene.game_objects.into_iter()
+        let ids: Vec<Id> = game_objects.into_iter()
             .filter(|s| s.is_some())
             .map(|maybe| maybe.unwrap())
             .map(|game_object| game_object.id)

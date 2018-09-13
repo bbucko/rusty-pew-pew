@@ -17,7 +17,7 @@
         <TEXTURES>
             <texture filename="assets/plane.png" ID="plane"/>
             <texture filename="assets/whitePlane.png" ID="whitePlane"/>
-            <texture filename="assets/bullet.png" ID="bullet"/>
+            <texture filename="assets/bullet.png" ID="bullet" width="65" height="65" frames="1"/>
         </TEXTURES>
     </PLAY>
 

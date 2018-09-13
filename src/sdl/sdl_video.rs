@@ -1,6 +1,7 @@
 use game::GameObject;
 use game::Position;
 use game::Renderer;
+use game::Scene;
 use helpers::parsers;
 use sdl::sdl2::pixels::Color;
 use sdl::sdl2::rect::Rect;
@@ -15,31 +16,34 @@ use sdl::TextureWrapper;
 use std::collections::HashMap;
 
 impl<'a> Renderer for SDLRenderer<'a> {
-    fn render(&mut self, game_objects: &mut [Option<GameObject>]) {
+    fn render(&mut self, game_objects: &mut [Option<GameObject>], scene: &Scene) {
         self.canvas.clear();
 
         for game_object in game_objects {
             if let Some(game_object) = game_object {
-                game_object.draw(self);
+                game_object.draw(self, scene);
             }
         }
 
         self.canvas.present();
     }
 
-    fn draw_texture(&mut self, texture_id: &str, position: Position) {
-        self.draw_frame(texture_id, position, 0);
+    fn draw_texture(&mut self, texture_id: &str, position: Position, scene: &Scene) {
+        self.draw_frame(texture_id, position, 0, scene);
     }
 
-    fn draw_frame(&mut self, texture_id: &str, position: Position, frame: u8) {
+    fn draw_frame(&mut self, texture_id: &str, position: Position, frame: u8, scene: &Scene) {
         let texture_wrapper = self.texture_wrappers.get(texture_id).expect("Missing texture wrapper");
 
         let texture = self.texture_manager.load(texture_id).expect("Error loading texture");
 
         let src_rect = texture_wrapper.src_rect(frame);
+
+        let position_on_screen = position - scene.position;
+
         let dst_rect = Rect::new(
-            position.x as i32,
-            position.y as i32,
+            position_on_screen.x as i32,
+            position_on_screen.y as i32,
             texture_wrapper.width,
             texture_wrapper.height,
         );
@@ -70,8 +74,8 @@ impl<'a> SDLRenderer<'a> {
 
     pub fn new(canvas: Canvas<Window>,
                mut texture_manager: TextureManager<'a, WindowContext>,
-               texture_wrappers: HashMap<String, TextureWrapper>) -> Self {
-        Self::load_textures(&mut texture_manager);
+               mut texture_wrappers: HashMap<String, TextureWrapper>) -> Self {
+        Self::load_textures(&mut texture_manager, &mut texture_wrappers);
 
         Self {
             canvas,
@@ -80,9 +84,10 @@ impl<'a> SDLRenderer<'a> {
         }
     }
 
-    fn load_textures(texture_manager: &mut TextureManager<'a, WindowContext>) {
+    fn load_textures(texture_manager: &mut TextureManager<'a, WindowContext>,
+                     texture_wrappers: &mut HashMap<String, TextureWrapper>) {
         let mut textures = Vec::new();
-        parsers::game_file::parse(&mut textures);
+        parsers::game_file::parse(&mut textures, texture_wrappers);
 
         for element in textures {
             let (key, filename) = element;

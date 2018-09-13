@@ -1,18 +1,19 @@
 use game::Engine;
 use game::GameObject;
-use game::GameState;
 use game::InputHandler;
 use game::InputState;
 use game::Renderer;
+use game::Scene;
 
 impl<R, I> Engine<R, I> where R: Renderer, I: InputHandler {
-    pub fn new(game_state: GameState, renderer: R, input_handler: I) -> Engine<R, I> {
+    pub fn new(game_objects: Vec<Option<GameObject>>, scene: Scene, renderer: R, input_handler: I) -> Engine<R, I> {
         println!("Created engine");
-        Engine { game_state, is_running: true, renderer, input_handler }
+
+        Engine { is_running: true, renderer, input_handler, scene, game_objects }
     }
 
     pub fn draw(&mut self) {
-        self.renderer.render(&mut self.game_state.game_objects)
+        self.renderer.render(&mut self.game_objects, &self.scene);
     }
 
     pub fn handle_input(&mut self) {
@@ -23,7 +24,7 @@ impl<R, I> Engine<R, I> where R: Renderer, I: InputHandler {
             return;
         }
 
-        for game_object in &mut self.game_state.game_objects {
+        for game_object in &mut self.game_objects {
             if let Some(game_object) = game_object {
                 game_object.input(&input_state);
             }
@@ -31,19 +32,21 @@ impl<R, I> Engine<R, I> where R: Renderer, I: InputHandler {
     }
 
     pub fn update(&mut self) {
-        Self::update_objects(&mut self.game_state.game_objects);
+        Self::update_objects(&mut self.game_objects);
 
-        Self::check_collisions(&mut self.game_state.game_objects);
+        Self::check_collisions(&mut self.game_objects);
 
-        let _removed = Self::remove_destroyed_objects(&mut self.game_state.game_objects);
+        let _removed = Self::remove_destroyed_objects(&mut self.game_objects);
+
+        self.scene.update();
     }
 
     fn check_collisions(game_objects: &mut Vec<Option<GameObject>>) {
         for i in 0..game_objects.len() {
-            let (_, me, back) = {
-                let (first, second) = game_objects.split_at_mut(i);
+            let (me, back) = {
+                let (_, second) = game_objects.split_at_mut(i);
                 let (me, rest) = second.split_first_mut().unwrap();
-                (first, me, rest)
+                (me, rest)
             };
 
             if let Some(me) = me {
@@ -70,6 +73,10 @@ impl<R, I> Engine<R, I> where R: Renderer, I: InputHandler {
 
                 if let Some(ref mut enemy) = game_object.enemy {
                     enemy.update();
+                }
+
+                if let Some(ref mut bullet) = game_object.bullet {
+                    bullet.update();
                 }
             }
         }
@@ -104,6 +111,7 @@ mod tests {
     use game::InputState;
     use game::Position;
     use game::Renderer;
+    use game::Scene;
     use game::states::PlayerState;
 
     struct MockRenderer {}
@@ -111,15 +119,15 @@ mod tests {
     struct MockInputHandler {}
 
     impl Renderer for MockRenderer {
-        fn render(&mut self, _scene: &mut [Option<GameObject>]) {
+        fn render(&mut self, _game_objects: &mut [Option<GameObject>], _scene: &Scene) {
             unimplemented!()
         }
 
-        fn draw_texture(&mut self, _texture_id: &str, _position: Position) {
+        fn draw_texture(&mut self, _texture_id: &str, _position: Position, _scene: &Scene) {
             unimplemented!()
         }
 
-        fn draw_frame(&mut self, _texture_id: &str, _position: Position, _frame: u8) {
+        fn draw_frame(&mut self, _texture_id: &str, _position: Position, _frame: u8, _scene: &Scene) {
             unimplemented!()
         }
     }
@@ -189,7 +197,32 @@ mod tests {
         //given
         let mut v1 = vec![
             Some(GameObject { bullet: None, enemy: None, id: 1, player: None }),
-            Some(GameObject { bullet: None, enemy: None, id: 1, player: None })
+            Some(GameObject { bullet: None, enemy: None, id: 2, player: None }),
+            Some(GameObject { bullet: None, enemy: None, id: 3, player: None }),
+            Some(GameObject { bullet: None, enemy: None, id: 4, player: None }),
+            Some(GameObject { bullet: None, enemy: None, id: 5, player: None }),
+            Some(GameObject { bullet: None, enemy: None, id: 6, player: None }),
+            Some(GameObject { bullet: None, enemy: None, id: 7, player: None })
+        ];
+
+        //when
+        Engine::<MockRenderer, MockInputHandler>::check_collisions(&mut v1);
+    }
+
+    #[test]
+    fn test_collisions_with_empty_cells() {
+        //given
+        let mut v1 = vec![
+            Some(GameObject { bullet: None, enemy: None, id: 1, player: None }),
+            Some(GameObject { bullet: None, enemy: None, id: 2, player: None }),
+            Some(GameObject { bullet: None, enemy: None, id: 3, player: None }),
+            None,
+            Some(GameObject { bullet: None, enemy: None, id: 4, player: None }),
+            Some(GameObject { bullet: None, enemy: None, id: 5, player: None }),
+            None,
+            Some(GameObject { bullet: None, enemy: None, id: 6, player: None }),
+            None,
+            Some(GameObject { bullet: None, enemy: None, id: 7, player: None })
         ];
 
         //when

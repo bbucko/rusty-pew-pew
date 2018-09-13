@@ -4,6 +4,7 @@ use game::states::EnemyState;
 use game::states::PlayerState;
 
 pub mod states;
+mod game_object;
 mod engine;
 mod scene;
 
@@ -12,9 +13,9 @@ pub type Velocity = Vector2<f32>;
 pub type Id = usize;
 
 pub trait Renderer {
-    fn render(&mut self, game_objects: &mut [Option<GameObject>]);
-    fn draw_texture(&mut self, texture_id: &str, position: Position);
-    fn draw_frame(&mut self, texture_id: &str, position: Position, frame: u8);
+    fn render(&mut self, game_objects: &mut [Option<GameObject>], scene: &Scene);
+    fn draw_texture(&mut self, texture_id: &str, position: Position, scene: &Scene);
+    fn draw_frame(&mut self, texture_id: &str, position: Position, frame: u8, scene: &Scene);
 }
 
 #[derive(Debug, PartialEq)]
@@ -36,72 +37,22 @@ pub struct GameObject {
     pub id: Id,
     pub player: Option<PlayerState>,
     pub enemy: Option<EnemyState>,
-    pub bullet: Option<BulletState>,
+    pub bullet: Option<BulletState>
 }
 
-impl GameObject {
-    pub fn input(&mut self, input_state: &[InputState]) {
-        if let Some(ref mut player) = self.player {
-            player.input(input_state);
-        }
-
-        if let Some(ref mut enemy) = self.enemy {
-            enemy.input(input_state);
-
-            let new_bullet = BulletState::enemy_shoots(enemy);
-            println!("Enemy shoots: {:?}", new_bullet);
-
-        }
-    }
-
-    pub fn draw(&mut self, renderer: &mut Renderer) {
-        if let Some(ref mut player) = self.player {
-            player.draw(renderer);
-        }
-
-        if let Some(ref mut enemy) = self.enemy {
-            enemy.draw(renderer);
-        }
-    }
-
-    fn is_destroyed(&self) -> bool {
-        if let Some(ref player) = self.player {
-            return player.is_destroyed;
-        }
-
-        if let Some(ref enemy) = self.enemy {
-            return enemy.is_destroyed;
-        }
-
-        false
-    }
-
-    fn check_collision(&self, object: &Option<GameObject>) -> bool {
-        match object {
-            Some(collider) => {
-                println!("Checking collision: {:?} with {:?}", self, collider);
-                true
-            }
-            _ => false
-        }
-    }
-}
 
 pub struct Engine<R: Renderer, I: InputHandler> {
-    game_state: GameState,
+    pub is_running: bool,
     renderer: R,
     input_handler: I,
-    pub is_running: bool,
+    scene: Scene,
+    game_objects: Vec<Option<GameObject>>,
 }
 
+#[allow(dead_code)]
 pub struct Scene {
     pub position: Position,
-    pub width: u32,
-    pub height: u32,
-    pub tiles: Vec<u8>,
-}
-
-pub struct GameState {
-    pub game_objects: Vec<Option<GameObject>>,
-    pub scene: Scene,
+    width: u32,
+    height: u32,
+    tiles: Vec<u8>,
 }

@@ -4,7 +4,7 @@ version = "0.1.0"
 authors = ["Blazej Bucko <blazej.bucko@gmail.com>"]
 
 [dependencies]
-gfx = "0.17.1"
+#gfx = "0.17.1"
 cgmath = "0.16.1"
 xml-rs = "0.8.0"
 inflate = "0.4.3"

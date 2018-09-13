@@ -1,6 +1,8 @@
 use helpers::parsers::find_attribute;
 use helpers::parsers::parser;
 use helpers::parsers::xml::reader::XmlEvent;
+use sdl::TextureWrapper;
+use std::collections::HashMap;
 
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 enum XmlReadingState {
@@ -9,7 +11,7 @@ enum XmlReadingState {
     InPlay,
 }
 
-pub fn parse(textures: &mut Vec<(String, String)>) {
+pub fn parse(textures: &mut Vec<(String, String)>, texture_wrappers: &mut HashMap<String, TextureWrapper>) {
     let mut state = XmlReadingState::Root;
 
     let parser = parser("assets/game.xml");
@@ -24,6 +26,22 @@ pub fn parse(textures: &mut Vec<(String, String)>) {
                     (XmlReadingState::InPlayTextures, "texture") => {
                         let key: String = find_attribute(&attributes, "id").unwrap();
                         let filename = find_attribute(&attributes, "filename").unwrap();
+
+                        let width: Option<String> = find_attribute(&attributes, "width");
+                        let height: Option<String> = find_attribute(&attributes, "height");
+
+                        match (width, height) {
+                            (Some(width), Some(height)) => {
+                                let padding = find_attribute(&attributes, "padding").unwrap_or(0);
+                                let frames = find_attribute(&attributes, "frames").unwrap_or(0);
+                                let width: u32 = width.parse().unwrap();
+                                let height: u32 = height.parse().unwrap();
+
+                                texture_wrappers.insert(key.clone(), TextureWrapper::new(key.clone(), width, height, padding, frames));
+                            }
+                            _ => {}
+                        }
+
 
                         textures.push((key.clone(), filename));
                         XmlReadingState::InPlayTextures
@@ -52,14 +70,16 @@ pub fn parse(textures: &mut Vec<(String, String)>) {
 #[cfg(test)]
 mod tests {
     use helpers::parsers;
+    use std::collections::HashMap;
 
     #[test]
     fn test_parsing() {
         //given
         let mut textures = Vec::new();
+        let mut texture_wrappers = HashMap::new();
 
         //when
-        parsers::game_file::parse(&mut textures);
+        parsers::game_file::parse(&mut textures, &mut texture_wrappers);
 
         //then
         assert_eq!(textures.len(), 3);
