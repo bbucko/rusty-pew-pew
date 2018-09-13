@@ -136,7 +136,7 @@ impl BulletState {
         BulletState { position: player.position + Position::new(0.0, -35.0) }
     }
 
-    pub fn enemy_bullet(enemy: &EnemyState) -> BulletState {
+    pub fn _enemy_bullet(enemy: &EnemyState) -> BulletState {
         BulletState { position: enemy.position }
     }
 
