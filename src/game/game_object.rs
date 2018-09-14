@@ -62,7 +62,7 @@ impl GameObject {
         }
     }
 
-    pub fn update(&mut self, new_objects: &mut Vec<Option<GameObject>>) {
+    pub fn update(&mut self, new_objects: &mut Vec<Option<GameObject>>, scene: &Scene) {
         let new_object = match (&mut self.player, &mut self.enemy, &mut self.bullet) {
             (Some(ref mut player), _, _) => player.update(),
             (_, Some(ref mut enemy), _) => enemy.update(),
@@ -73,6 +73,15 @@ impl GameObject {
         if new_object.is_some() { new_objects.push(new_object); }
 
         let position = self.position();
+
+        match self.object_type {
+            ObjectType::Player => {
+                //fixme check if out of screen
+            }
+            _ => if position.y < scene.position.y { self.destroy(); }
+        }
+
+
         match &mut self.collider {
             Some(collider) => collider.position = position,
             _ => {}

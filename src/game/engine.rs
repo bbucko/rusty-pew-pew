@@ -32,33 +32,33 @@ impl<R, I> Engine<R, I> where R: Renderer, I: InputHandler {
     }
 
     pub fn update(&mut self) {
-        Self::update_objects(&mut self.game_objects);
-        Self::check_collisions(&mut self.game_objects);
-        Self::remove_destroyed_objects(&mut self.game_objects);
+        self.update_objects();
+        self.check_collisions();
+        self.remove_destroyed_objects();
 
         self.scene.update();
     }
 
-    fn update_objects(game_objects: &mut Vec<Option<GameObject>>) {
+    fn update_objects(&mut self) {
         let mut new_object = Vec::new();
 
-        for game_object in game_objects.iter_mut() {
+        for game_object in self.game_objects.iter_mut() {
             if let Some(ref mut game_object) = game_object {
-                game_object.update(&mut new_object);
+                game_object.update(&mut new_object, &self.scene);
             }
         }
 
-        Self::add_new_objects(game_objects, new_object);
+        self.add_new_objects(new_object);
     }
 
-    fn add_new_objects(game_objects: &mut Vec<Option<GameObject>>, new_objects: Vec<Option<GameObject>>) {
+    fn add_new_objects(&mut self, new_objects: Vec<Option<GameObject>>) {
         let mut next_new_object = new_objects.into_iter()
             .filter(|obj| obj.is_some());
 
-        for i in 0..game_objects.len() {
-            if game_objects[i] == None {
+        for i in 0..self.game_objects.len() {
+            if self.game_objects[i] == None {
                 if let Some(option) = next_new_object.next() {
-                    mem::replace(&mut game_objects[i], option);
+                    mem::replace(&mut self.game_objects[i], option);
                     continue;
                 }
                 break;
@@ -69,12 +69,12 @@ impl<R, I> Engine<R, I> where R: Renderer, I: InputHandler {
             .filter(|s| s.is_some())
             .collect::<Vec<Option<GameObject>>>();
 
-        game_objects.extend(new_objects);
+        self.game_objects.extend(new_objects);
     }
 
-    fn check_collisions(game_objects: &mut Vec<Option<GameObject>>) {
-        for i in 0..game_objects.len() {
-            let (me, tail) = game_objects[i..].split_first_mut().unwrap();
+    fn check_collisions(&mut self) {
+        for i in 0..self.game_objects.len() {
+            let (me, tail) = self.game_objects[i..].split_first_mut().unwrap();
             if let Some(me) = me {
                 for candidate in tail {
                     if let Some(candidate) = candidate {
@@ -85,8 +85,8 @@ impl<R, I> Engine<R, I> where R: Renderer, I: InputHandler {
         }
     }
 
-    fn remove_destroyed_objects(game_objects: &mut [Option<GameObject>]) {
-        for game_object in game_objects {
+    fn remove_destroyed_objects(&mut self) {
+        for game_object in self.game_objects.iter_mut() {
             let should_remove = match game_object {
                 Some(obj) => obj.is_destroyed(),
                 _ => false,
@@ -143,38 +143,59 @@ mod tests {
     #[test]
     fn test_removal_of_empty_list() {
         //given
-        let mut game_objects = vec![];
+        let game_objects = vec![];
+        let scene = Scene {
+            position: Position::new(0.0, 0.0),
+            width: 0,
+            height: 0,
+            tiles: Vec::new(),
+        };
+        let mut engine = Engine::new(game_objects, scene, MockRenderer {}, MockInputHandler {});
 
         //when
-        Engine::<MockRenderer, MockInputHandler>::remove_destroyed_objects(&mut game_objects);
+        engine.remove_destroyed_objects();
 
         //then
-        assert_eq!(game_objects.len(), 0);
+        assert_eq!(engine.game_objects.len(), 0);
     }
 
     #[test]
     fn test_removal_of_list_of_none() {
         //given
-        let mut game_objects = vec![None];
+        let game_objects = vec![None];
+        let scene = Scene {
+            position: Position::new(0.0, 0.0),
+            width: 0,
+            height: 0,
+            tiles: Vec::new(),
+        };
+        let mut engine = Engine::new(game_objects, scene, MockRenderer {}, MockInputHandler {});
 
         //when
-        Engine::<MockRenderer, MockInputHandler>::remove_destroyed_objects(&mut game_objects);
+        engine.remove_destroyed_objects();
 
         //then
-        assert_eq!(game_objects[0], None);
+        assert_eq!(engine.game_objects[0], None);
     }
 
     #[test]
     fn test_removal_of_list_of_some_non_removable_objects() {
         //given
         let obj = Some(GameObject { bullet: None, enemy: None, id: 1, object_type: ObjectType::Unknown, player: None, collider: None });
-        let mut game_objects = vec![obj];
+        let game_objects = vec![obj];
+        let scene = Scene {
+            position: Position::new(0.0, 0.0),
+            width: 0,
+            height: 0,
+            tiles: Vec::new(),
+        };
+        let mut engine = Engine::new(game_objects, scene, MockRenderer {}, MockInputHandler {});
 
         //when
-        Engine::<MockRenderer, MockInputHandler>::remove_destroyed_objects(&mut game_objects);
+        engine.remove_destroyed_objects();
 
         //then
-        assert_eq!(game_objects[0], Some(GameObject { bullet: None, enemy: None, id: 1, object_type: ObjectType::Unknown, player: None, collider: None }));
+        assert_eq!(engine.game_objects[0], Some(GameObject { bullet: None, enemy: None, id: 1, object_type: ObjectType::Unknown, player: None, collider: None }));
     }
 
     #[test]
@@ -184,19 +205,26 @@ mod tests {
         player_state.is_destroyed = true;
 
         let obj = Some(GameObject { player: Some(player_state), enemy: None, bullet: None, id: 1, object_type: ObjectType::Unknown, collider: None });
-        let mut game_objects = vec![obj];
+        let game_objects = vec![obj];
+        let scene = Scene {
+            position: Position::new(0.0, 0.0),
+            width: 0,
+            height: 0,
+            tiles: Vec::new(),
+        };
+        let mut engine = Engine::new(game_objects, scene, MockRenderer {}, MockInputHandler {});
 
         //when
-        Engine::<MockRenderer, MockInputHandler>::remove_destroyed_objects(&mut game_objects);
+        engine.remove_destroyed_objects();
 
         //then
-        assert_eq!(game_objects[0], None);
+        assert_eq!(engine.game_objects[0], None);
     }
 
     #[test]
     fn test_collisions() {
         //given
-        let mut v1 = vec![
+        let game_objects = vec![
             Some(GameObject { bullet: None, enemy: None, id: 1, object_type: ObjectType::Unknown, player: None, collider: None }),
             Some(GameObject { bullet: None, enemy: None, id: 2, object_type: ObjectType::Unknown, player: None, collider: None }),
             Some(GameObject { bullet: None, enemy: None, id: 3, object_type: ObjectType::Unknown, player: None, collider: None }),
@@ -205,15 +233,25 @@ mod tests {
             Some(GameObject { bullet: None, enemy: None, id: 6, object_type: ObjectType::Unknown, player: None, collider: None }),
             Some(GameObject { bullet: None, enemy: None, id: 7, object_type: ObjectType::Unknown, player: None, collider: None })
         ];
+        let scene = Scene {
+            position: Position::new(0.0, 0.0),
+            width: 0,
+            height: 0,
+            tiles: Vec::new(),
+        };
+        let mut engine = Engine::new(game_objects, scene, MockRenderer {}, MockInputHandler {});
 
         //when
-        Engine::<MockRenderer, MockInputHandler>::check_collisions(&mut v1);
+        engine.check_collisions();
+
+        //then
+        //fixme missing assers
     }
 
     #[test]
     fn test_collisions_with_empty_cells() {
         //given
-        let mut v1 = vec![
+        let game_objects = vec![
             Some(GameObject { bullet: None, enemy: None, id: 1, object_type: ObjectType::Unknown, player: None, collider: None }),
             Some(GameObject { bullet: None, enemy: None, id: 2, object_type: ObjectType::Unknown, player: None, collider: None }),
             Some(GameObject { bullet: None, enemy: None, id: 3, object_type: ObjectType::Unknown, player: None, collider: None }),
@@ -225,63 +263,94 @@ mod tests {
             None,
             Some(GameObject { bullet: None, enemy: None, id: 7, object_type: ObjectType::Unknown, player: None, collider: None })
         ];
+        let scene = Scene {
+            position: Position::new(0.0, 0.0),
+            width: 0,
+            height: 0,
+            tiles: Vec::new(),
+        };
+        let mut engine = Engine::new(game_objects, scene, MockRenderer {}, MockInputHandler {});
 
         //when
-        Engine::<MockRenderer, MockInputHandler>::check_collisions(&mut v1);
+        engine.check_collisions();
+
+        //then
+        //fixme missing assers
     }
 
     #[test]
     fn test_updating_objects() {
         //given
-        let mut game_objects = vec![None];
+        let game_objects = vec![None];
         let new_objects = vec![
             Some(GameObject { id: 0, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None })
         ];
+        let scene = Scene {
+            position: Position::new(0.0, 0.0),
+            width: 0,
+            height: 0,
+            tiles: Vec::new(),
+        };
+        let mut engine = Engine::new(game_objects, scene, MockRenderer {}, MockInputHandler {});
 
         //when
-        Engine::<MockRenderer, MockInputHandler>::add_new_objects(&mut game_objects, new_objects);
+        engine.add_new_objects(new_objects);
 
-        assert_eq!(game_objects, vec![Some(GameObject { id: 0, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None })]);
+        assert_eq!(engine.game_objects, vec![Some(GameObject { id: 0, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None })]);
     }
 
     #[test]
     fn test_updating_objects_with_expand() {
         //given
-        let mut game_objects = vec![
+        let game_objects = vec![
             Some(GameObject { id: 0, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None })
         ];
         let new_objects = vec![
             Some(GameObject { id: 1, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None }),
             Some(GameObject { id: 2, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None }),
         ];
+        let scene = Scene {
+            position: Position::new(0.0, 0.0),
+            width: 0,
+            height: 0,
+            tiles: Vec::new(),
+        };
+        let mut engine = Engine::new(game_objects, scene, MockRenderer {}, MockInputHandler {});
 
         //when
-        Engine::<MockRenderer, MockInputHandler>::add_new_objects(&mut game_objects, new_objects);
+        engine.add_new_objects(new_objects);
 
-        assert_eq!(game_objects, vec![Some(GameObject { id: 0, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None }), Some(GameObject { id: 1, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None }), Some(GameObject { id: 2, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None })]);
+        assert_eq!(engine.game_objects, vec![Some(GameObject { id: 0, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None }), Some(GameObject { id: 1, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None }), Some(GameObject { id: 2, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None })]);
     }
 
     #[test]
     fn test_updating_objects_with_none_and_expand() {
         //given
-        let mut game_objects = vec![
+        let game_objects = vec![
             None,
             Some(GameObject { id: 1, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None })];
         let new_objects = vec![
             Some(GameObject { id: 2, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None }),
             Some(GameObject { id: 3, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None }),
         ];
+        let scene = Scene {
+            position: Position::new(0.0, 0.0),
+            width: 0,
+            height: 0,
+            tiles: Vec::new(),
+        };
+        let mut engine = Engine::new(game_objects, scene, MockRenderer {}, MockInputHandler {});
 
         //when
-        Engine::<MockRenderer, MockInputHandler>::add_new_objects(&mut game_objects, new_objects);
+        engine.add_new_objects(new_objects);
 
-        assert_eq!(game_objects, vec![Some(GameObject { id: 2, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None }), Some(GameObject { id: 1, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None }), Some(GameObject { id: 3, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None })]);
+        assert_eq!(engine.game_objects, vec![Some(GameObject { id: 2, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None }), Some(GameObject { id: 1, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None }), Some(GameObject { id: 3, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None })]);
     }
 
     #[test]
     fn test_updating_objects_with_none_in_new_objects_and_expand() {
         //given
-        let mut game_objects = vec![
+        let game_objects = vec![
             None,
             Some(GameObject { id: 1, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None })];
 
@@ -289,10 +358,17 @@ mod tests {
             Some(GameObject { id: 2, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None }),
             None
         ];
+        let scene = Scene {
+            position: Position::new(0.0, 0.0),
+            width: 0,
+            height: 0,
+            tiles: Vec::new(),
+        };
+        let mut engine = Engine::new(game_objects, scene, MockRenderer {}, MockInputHandler {});
 
         //when
-        Engine::<MockRenderer, MockInputHandler>::add_new_objects(&mut game_objects, new_objects);
+        engine.add_new_objects(new_objects);
 
-        assert_eq!(game_objects, vec![Some(GameObject { id: 2, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None }), Some(GameObject { id: 1, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None })]);
+        assert_eq!(engine.game_objects, vec![Some(GameObject { id: 2, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None }), Some(GameObject { id: 1, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None })]);
     }
 }
