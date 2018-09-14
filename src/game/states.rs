@@ -1,12 +1,19 @@
+use game::BulletState;
+use game::CollisionState;
+use game::EnemyState;
 use game::GameObject;
 use game::Id;
 use game::InputState;
+use game::ObjectType;
+use game::PlayerState;
 use game::Position;
 use game::Renderer;
 use game::Scene;
 use game::Velocity;
+use sdl2::rect::Rect;
 use std::collections::HashMap;
 use std::num::ParseFloatError;
+use std::num::ParseIntError;
 use std::sync::atomic::{self, AtomicUsize};
 use std::time::Duration;
 use std::time::SystemTime;
@@ -17,23 +24,18 @@ lazy_static! {
 }
 
 pub fn create_game_object(properties: &HashMap<String, String>) -> Result<GameObject, String> {
-    let object_type = properties.get("type").unwrap_or_else(|| panic!("Unknown type")).as_str();
+    let object_type = match properties.get("type").unwrap_or_else(|| panic!("Unknown type")).as_str() {
+        "Player" => ObjectType::Player,
+        "Enemy" => ObjectType::Enemy,
+        _ => ObjectType::Unknown,
+    };
 
+    let height = parse_int(properties, "height")?;
+    let width = parse_int(properties, "width")?;
     let x = parse_float(properties, "x")?;
     let y = parse_float(properties, "y")?;
 
-    let position = Position::new(x, y);
-
-    let id = next_id();
-    let mut default_object = GameObject { id, player: None, enemy: None, bullet: None };
-
-    match object_type {
-        "Enemy" => default_object.enemy = Some(EnemyState::new(position)),
-        "Player" => default_object.player = Some(PlayerState::new(position)),
-        _ => panic!("unknown type: {:?}", object_type),
-    }
-
-    Ok(default_object)
+    Ok(GameObject::new(next_id(), Position::new(x, y), object_type, height, width))
 }
 
 fn next_id() -> Id { OBJECT_COUNTER.fetch_add(1, atomic::Ordering::SeqCst) }
@@ -46,19 +48,17 @@ fn parse_float(properties: &HashMap<String, String>, attribute_name: &str) -> Re
         .map_err(|e: ParseFloatError| e.to_string())
 }
 
-#[derive(Debug, PartialEq)]
-pub struct PlayerState {
-    position: Position,
-    frame: u8,
-    pub is_shooting: bool,
-    pub is_destroyed: bool,
-    last_shot_date: SystemTime,
-    velocity: Velocity,
+fn parse_int(properties: &HashMap<String, String>, attribute_name: &str) -> Result<u32, String> {
+    properties
+        .get(attribute_name)
+        .unwrap_or_else(|| panic!("Missing: {:?}", attribute_name))
+        .parse()
+        .map_err(|e: ParseIntError| e.to_string())
 }
 
 impl PlayerState {
-    pub fn new(position: Position) -> Self {
-        PlayerState { position, frame: 0, is_shooting: false, last_shot_date: SystemTime::now(), is_destroyed: false, velocity: Velocity::new(0.0, 0.0) }
+    pub fn new(id: Id, position: Position) -> Self {
+        PlayerState { id, position, frame: 0, is_shooting: false, last_shot_date: SystemTime::now(), is_destroyed: false, velocity: Velocity::new(0.0, 0.0) }
     }
 
     pub fn input(&mut self, input_state: &[InputState]) {
@@ -80,9 +80,14 @@ impl PlayerState {
         renderer.draw_frame("plane", self.position, self.frame, scene);
     }
 
-    pub fn update(&mut self) {
+    pub fn update(&mut self) -> Option<GameObject> {
         self.frame = (self.frame + 1) % 3;
         self.position += self.velocity;
+
+        match self.is_shooting {
+            true => Some(self.shoots()),
+            false => None
+        }
     }
 
     pub fn is_allowed_to_shoot(&self) -> bool {
@@ -95,25 +100,14 @@ impl PlayerState {
         self.is_shooting = false;
         self.last_shot_date = SystemTime::now();
 
-        GameObject {
-            id: next_id(),
-            player: None,
-            enemy: None,
-            bullet: Some(BulletState::player_bullet(self)),
-        }
+        GameObject::new_bullet(next_id(), self.position, ObjectType::Player, self.id)
     }
 }
 
 
-#[derive(Debug, PartialEq)]
-pub struct EnemyState {
-    position: Position,
-    pub is_destroyed: bool,
-}
-
 impl EnemyState {
-    pub fn new(position: Position) -> EnemyState {
-        EnemyState { position, is_destroyed: false }
+    pub fn new(id: Id, position: Position) -> EnemyState {
+        EnemyState { id, position, is_destroyed: false }
     }
 
     pub fn input(&mut self, _input_state: &[InputState]) {}
@@ -122,29 +116,35 @@ impl EnemyState {
         renderer.draw_texture("whitePlane", self.position, scene);
     }
 
-    pub fn update(&mut self) {}
+    pub fn update(&mut self) -> Option<GameObject> { None }
 }
 
-#[derive(Debug, PartialEq)]
-pub struct BulletState {
-    position: Position,
-
-}
 
 impl BulletState {
-    pub fn player_bullet(player: &PlayerState) -> BulletState {
-        BulletState { position: player.position + Position::new(0.0, -35.0) }
-    }
-
     pub fn _enemy_bullet(enemy: &EnemyState) -> BulletState {
-        BulletState { position: enemy.position }
+        BulletState { shooter_type: ObjectType::Enemy, shooter_id: enemy.id, position: enemy.position, velocity: Velocity::new(0.0, 4.0), is_destroyed: false }
     }
 
     pub fn draw(&mut self, renderer: &mut Renderer, scene: &Scene) {
         renderer.draw_texture("bullet", self.position, scene);
     }
 
-    pub fn update(&mut self) {
-        self.position += Position::new(0.0, -4.0);
+    pub fn update(&mut self) -> Option<GameObject> {
+        self.position += self.velocity;
+        None
+    }
+
+    pub fn is_fired_by(&self, shooter: &GameObject) -> bool {
+        println!("shooter_id: {:?} :: shooter ID: {:?}", self.shooter_id, shooter.id);
+        self.shooter_id == shooter.id
+    }
+}
+
+impl CollisionState {
+    pub fn is_colliding(&self, with: &CollisionState) -> bool {
+        let padding = 0;
+        let a = Rect::new(self.position.x as i32, self.position.y as i32, self.width - padding, self.height - padding);
+        let b = Rect::new(with.position.x as i32, with.position.y as i32, with.width - padding, with.height - padding);
+        a.has_intersection(b)
     }
 }

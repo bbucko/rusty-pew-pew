@@ -3,6 +3,7 @@ extern crate cgmath;
 extern crate core;
 #[macro_use]
 extern crate lazy_static;
+extern crate sdl2;
 
 use helpers::parsers;
 use std::thread;
