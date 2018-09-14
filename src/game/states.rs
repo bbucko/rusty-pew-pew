@@ -134,10 +134,7 @@ impl BulletState {
         None
     }
 
-    pub fn is_fired_by(&self, shooter: &GameObject) -> bool {
-        println!("shooter_id: {:?} :: shooter ID: {:?}", self.shooter_id, shooter.id);
-        self.shooter_id == shooter.id
-    }
+    pub fn is_fired_by(&self, shooter: &GameObject) -> bool { self.shooter_id == shooter.id }
 }
 
 impl CollisionState {
