@@ -57,7 +57,7 @@ impl<'l, K, R, L> ResourceManager<'l, K, R, L>
 impl<'l, T> ResourceLoader<'l, Texture<'l>> for TextureCreator<T> {
     type Args = str;
     fn load(&'l self, path: &str) -> Result<Texture, String> {
-        println!("loading a texture from path: {:?}", path);
+        println!("Loading a texture from path: {:?}", path);
         self.load_texture(path)
     }
 }

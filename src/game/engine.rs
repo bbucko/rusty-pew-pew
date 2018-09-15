@@ -8,7 +8,6 @@ use std::mem;
 
 impl<R, I> Engine<R, I> where R: Renderer, I: InputHandler {
     pub fn new(game_objects: Vec<Option<GameObject>>, scene: Scene, renderer: R, input_handler: I) -> Engine<R, I> {
-        println!("Created engine");
         Engine { is_running: true, renderer, input_handler, scene, game_objects }
     }
 

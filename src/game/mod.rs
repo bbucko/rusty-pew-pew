@@ -1,15 +1,17 @@
 use cgmath::Vector2;
-use sdl2::rect::Rect;
 use std::time::SystemTime;
 
 pub mod states;
 mod game_object;
 mod engine;
 mod scene;
+mod misc;
 
 pub type Position = Vector2<f32>;
 pub type Velocity = Vector2<f32>;
 pub type Id = usize;
+
+const RECT_PADDING: u32 = 2;
 
 pub struct Engine<R: Renderer, I: InputHandler> {
     pub is_running: bool,
@@ -38,7 +40,6 @@ pub enum InputState {
 pub trait InputHandler {
     fn capture(&mut self) -> Vec<InputState>;
 }
-
 
 #[allow(dead_code)]
 pub struct Scene {
@@ -96,14 +97,27 @@ pub struct BulletState {
     pub is_destroyed: bool,
 }
 
+struct Rect {
+    x: u32,
+    y: u32,
+    width: u32,
+    height: u32,
+}
+
 trait CollisionState {
     fn position(&self) -> Position;
     fn size(&self) -> (u32, u32);
+    fn rect(&self) -> Rect {
+        Rect::new(self.position().x, self.position().y, self.size().0, self.size().1)
+    }
+    fn rect_with_padding(&self) -> Rect {
+        Rect::new(self.position().x, self.position().y, self.size().0 - RECT_PADDING, self.size().1 - RECT_PADDING)
+    }
 
-    fn is_colliding(&self, with: &CollisionState) -> bool {
-        let padding = 10;
-        let a = Rect::new(self.position().x as i32, self.position().y as i32, self.size().0 - padding, self.size().1 - padding);
-        let b = Rect::new(with.position().x as i32, with.position().y as i32, with.size().0 - padding, with.size().1 - padding);
-        a.has_intersection(b)
+    fn is_colliding(&self, other: &CollisionState) -> bool {
+        let a = self.rect_with_padding();
+        let b = other.rect_with_padding();
+
+        a.has_intersection(&b)
     }
 }

@@ -110,7 +110,7 @@ impl GameObject {
         if self.is_bullet() && !collider.is_bullet() {
             hit = match &self.bullet {
                 Some(bullet) if !bullet.is_fired_by(collider) => {
-                    println!("{:?} was hit by {:?}", collider, self);
+                    println!("Object {:?} was hit by object {:?}", collider, self);
                     true
                 }
                 _ => false
@@ -118,11 +118,14 @@ impl GameObject {
         } else if collider.is_bullet() && !self.is_bullet() {
             hit = match &collider.bullet {
                 Some(bullet) if !bullet.is_fired_by(self) => {
-                    println!("{:?} was hit by {:?}", self, collider);
+                    println!("Object {:?} was hit by object {:?}", self, collider);
                     true
                 }
                 _ => false
             }
+        } else if !collider.is_bullet() && !self.is_bullet() {
+            println!("Object {:?} collided with object {:?}", self, collider);
+            hit = true;
         }
 
         if hit {
@@ -158,7 +161,7 @@ impl Debug for GameObject {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         let position = self.position();
         let object_type = self.object_type;
-        write!(f, "GameObject #{:?} of type: {:?} at {{ x: {}, y: {} }}", self.id, object_type, position.x, position.y);
+        write!(f, "#{:?} of type: {:?} at {{ x: {}, y: {} }}", self.id, object_type, position.x, position.y);
         Ok(())
     }
 }

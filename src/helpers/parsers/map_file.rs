@@ -71,7 +71,6 @@ pub fn parse(filename: &str) -> (Vec<Option<GameObject>>, Scene, HashMap<String,
                     let inflated = decode(value.trim()).unwrap();
                     let deflated = inflate_bytes_zlib(&inflated);
                     tiles.extend(deflated.expect("Missing tiles").iter());
-                    println!("Parsed layers");
                 }
             }
             Ok(XmlEvent::EndElement { name, .. }) => {
