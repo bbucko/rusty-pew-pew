@@ -37,11 +37,13 @@ pub fn parse(textures: &mut Vec<(String, String)>, texture_wrappers: &mut HashMa
                                 let width: u32 = width.parse().unwrap();
                                 let height: u32 = height.parse().unwrap();
 
-                                texture_wrappers.insert(key.clone(), TextureWrapper::new(key.clone(), width, height, padding, frames));
+                                texture_wrappers.insert(
+                                    key.clone(),
+                                    TextureWrapper::new(key.clone(), width, height, padding, frames),
+                                );
                             }
                             _ => {}
                         }
-
 
                         textures.push((key.clone(), filename));
                         XmlReadingState::InPlayTextures

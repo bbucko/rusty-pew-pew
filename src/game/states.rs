@@ -23,7 +23,11 @@ lazy_static! {
 }
 
 pub fn create_game_object(properties: &HashMap<String, String>) -> Result<GameObject, String> {
-    let object_type = match properties.get("type").unwrap_or_else(|| panic!("Unknown type")).as_str() {
+    let object_type = match properties
+        .get("type")
+        .unwrap_or_else(|| panic!("Unknown type"))
+        .as_str()
+    {
         "Player" => ObjectType::Player,
         "Enemy" => ObjectType::Enemy,
         _ => ObjectType::Unknown,
@@ -34,10 +38,18 @@ pub fn create_game_object(properties: &HashMap<String, String>) -> Result<GameOb
     let x = parse_float(properties, "x")?;
     let y = parse_float(properties, "y")?;
 
-    Ok(GameObject::new(next_id(), Position::new(x, y), object_type, height, width))
+    Ok(GameObject::new(
+        next_id(),
+        Position::new(x, y),
+        object_type,
+        height,
+        width,
+    ))
 }
 
-fn next_id() -> Id { OBJECT_COUNTER.fetch_add(1, atomic::Ordering::SeqCst) }
+fn next_id() -> Id {
+    OBJECT_COUNTER.fetch_add(1, atomic::Ordering::SeqCst)
+}
 
 fn parse_float(properties: &HashMap<String, String>, attribute_name: &str) -> Result<f32, String> {
     properties
@@ -57,7 +69,17 @@ fn parse_int(properties: &HashMap<String, String>, attribute_name: &str) -> Resu
 
 impl PlayerState {
     pub fn new(id: Id, position: Position, width: u32, height: u32) -> Self {
-        PlayerState { id, position, frame: 0, is_shooting: false, last_shot_date: SystemTime::now(), is_destroyed: false, velocity: Velocity::new(0.0, 0.0), width, height }
+        PlayerState {
+            id,
+            position,
+            frame: 0,
+            is_shooting: false,
+            last_shot_date: SystemTime::now(),
+            is_destroyed: false,
+            velocity: Velocity::new(0.0, 0.0),
+            width,
+            height,
+        }
     }
 
     pub fn input(&mut self, input_state: &[InputState]) {
@@ -68,8 +90,10 @@ impl PlayerState {
                 InputState::Down => new_velocity += Velocity::new(0.0, 2.0),
                 InputState::Left => new_velocity += Velocity::new(-2.0, 0.0),
                 InputState::Right => new_velocity += Velocity::new(2.0, 0.0),
-                InputState::Shoot => if self.is_allowed_to_shoot() { self.is_shooting = true },
-                _ => self.velocity = Velocity::new(0.0, 0.0)
+                InputState::Shoot => if self.is_allowed_to_shoot() {
+                    self.is_shooting = true
+                },
+                _ => self.velocity = Velocity::new(0.0, 0.0),
             }
         }
         self.velocity = new_velocity;
@@ -85,7 +109,7 @@ impl PlayerState {
 
         match self.is_shooting {
             true => Some(self.shoots()),
-            false => None
+            false => None,
         }
     }
 
@@ -103,10 +127,15 @@ impl PlayerState {
     }
 }
 
-
 impl EnemyState {
     pub fn new(id: Id, position: Position, width: u32, height: u32) -> EnemyState {
-        EnemyState { id, position, is_destroyed: false, width, height }
+        EnemyState {
+            id,
+            position,
+            is_destroyed: false,
+            width,
+            height,
+        }
     }
 
     pub fn input(&mut self, _input_state: &[InputState]) {}
@@ -115,13 +144,20 @@ impl EnemyState {
         renderer.draw_texture("whitePlane", self.position, scene);
     }
 
-    pub fn update(&mut self) -> Option<GameObject> { None }
+    pub fn update(&mut self) -> Option<GameObject> {
+        None
+    }
 }
-
 
 impl BulletState {
     pub fn _enemy_bullet(enemy: &EnemyState) -> BulletState {
-        BulletState { shooter_type: ObjectType::Enemy, shooter_id: enemy.id, position: enemy.position, velocity: Velocity::new(0.0, 4.0), is_destroyed: false }
+        BulletState {
+            shooter_type: ObjectType::Enemy,
+            shooter_id: enemy.id,
+            position: enemy.position,
+            velocity: Velocity::new(0.0, 4.0),
+            is_destroyed: false,
+        }
     }
 
     pub fn draw(&mut self, renderer: &mut Renderer, scene: &Scene) {
@@ -133,23 +169,37 @@ impl BulletState {
         None
     }
 
-    pub fn is_fired_by(&self, shooter: &GameObject) -> bool { self.shooter_id == shooter.id }
+    pub fn is_fired_by(&self, shooter: &GameObject) -> bool {
+        self.shooter_id == shooter.id
+    }
 }
 
 impl CollisionState for BulletState {
-    fn position(&self) -> Position { self.position }
+    fn position(&self) -> Position {
+        self.position
+    }
 
-    fn size(&self) -> (u32, u32) { (32, 32) }
+    fn size(&self) -> (u32, u32) {
+        (32, 32)
+    }
 }
 
 impl CollisionState for PlayerState {
-    fn position(&self) -> Position { self.position }
+    fn position(&self) -> Position {
+        self.position
+    }
 
-    fn size(&self) -> (u32, u32) { (64, 64) }
+    fn size(&self) -> (u32, u32) {
+        (self.width, self.height)
+    }
 }
 
 impl CollisionState for EnemyState {
-    fn position(&self) -> Position { self.position }
+    fn position(&self) -> Position {
+        self.position
+    }
 
-    fn size(&self) -> (u32, u32) { (64, 64) }
+    fn size(&self) -> (u32, u32) {
+        (self.width, self.height)
+    }
 }

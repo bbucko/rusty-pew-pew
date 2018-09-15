@@ -1,11 +1,11 @@
 use cgmath::Vector2;
 use std::time::SystemTime;
 
-pub mod states;
-mod game_object;
 mod engine;
-mod scene;
+mod game_object;
 mod misc;
+mod scene;
+pub mod states;
 
 pub type Position = Vector2<f32>;
 pub type Velocity = Vector2<f32>;
@@ -111,7 +111,12 @@ trait CollisionState {
         Rect::new(self.position().x, self.position().y, self.size().0, self.size().1)
     }
     fn rect_with_padding(&self) -> Rect {
-        Rect::new(self.position().x, self.position().y, self.size().0 - RECT_PADDING, self.size().1 - RECT_PADDING)
+        Rect::new(
+            self.position().x,
+            self.position().y,
+            self.size().0 - RECT_PADDING,
+            self.size().1 - RECT_PADDING,
+        )
     }
 
     fn is_colliding(&self, other: &CollisionState) -> bool {

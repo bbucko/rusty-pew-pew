@@ -1,7 +1,7 @@
 use base64::decode;
+use game::states;
 use game::GameObject;
 use game::Scene;
-use game::states;
 use helpers::parsers::find_attribute;
 use helpers::parsers::inflate::inflate_bytes_zlib;
 use helpers::parsers::parser;
@@ -46,7 +46,8 @@ pub fn parse(filename: &str) -> (Vec<Option<GameObject>>, Scene, HashMap<String,
                     (XmlReadingState::InMapObjectgroup, "object") => {
                         let available_keys = ["name", "type", "width", "height", "x", "y"].iter();
                         properties.extend(available_keys.map(|key| {
-                            let value: String = find_attribute(&attributes, key).unwrap_or_else(|| panic!("missing {:?}", key));
+                            let value: String =
+                                find_attribute(&attributes, key).unwrap_or_else(|| panic!("missing {:?}", key));
                             (key.to_string(), value.clone())
                         }));
                         XmlReadingState::InMapObjectgroupObject
@@ -129,7 +130,8 @@ mod tests {
         let (game_objects, _scene, texture_wrappers) = parsers::map_file::parse("assets/map1.tmx");
         assert_eq!(game_objects.len(), 3);
 
-        let ids: Vec<Id> = game_objects.into_iter()
+        let ids: Vec<Id> = game_objects
+            .into_iter()
             .filter(|s| s.is_some())
             .map(|maybe| maybe.unwrap())
             .map(|game_object| game_object.id)

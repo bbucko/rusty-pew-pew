@@ -2,7 +2,12 @@ use game::Rect;
 
 impl Rect {
     pub fn new(x: f32, y: f32, width: u32, height: u32) -> Rect {
-        Rect { x: x as u32, y: y as u32, width, height }
+        Rect {
+            x: x as u32,
+            y: y as u32,
+            width,
+            height,
+        }
     }
 
     pub fn has_intersection(&self, other: &Rect) -> bool {
@@ -12,20 +17,32 @@ impl Rect {
         let mut b_min = other.x;
         let mut b_max = b_min + other.width;
 
-        if b_min > a_min { a_min = b_min; }
-        if b_max < a_max { a_max = b_max; }
+        if b_min > a_min {
+            a_min = b_min;
+        }
+        if b_max < a_max {
+            a_max = b_max;
+        }
 
-        if a_max <= a_min { return false; }
+        if a_max <= a_min {
+            return false;
+        }
 
         /* Vertical intersection */
         a_min = self.y;
         a_max = a_min + self.height;
         b_min = other.y;
         b_max = b_min + other.height;
-        if b_min > a_min { a_min = b_min; }
-        if b_max < a_max { a_max = b_max; }
+        if b_min > a_min {
+            a_min = b_min;
+        }
+        if b_max < a_max {
+            a_max = b_max;
+        }
 
-        if a_max <= a_min { return false; }
+        if a_max <= a_min {
+            return false;
+        }
 
         return true;
     }
@@ -34,7 +51,6 @@ impl Rect {
 #[cfg(test)]
 mod tests {
     use game::Rect;
-
 
     #[test]
     fn test_intersection() {

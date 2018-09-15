@@ -16,7 +16,13 @@ use std::fmt::Formatter;
 
 impl GameObject {
     pub fn new(id: Id, position: Position, object_type: ObjectType, width: u32, height: u32) -> Self {
-        let mut object = GameObject { id, player: None, enemy: None, bullet: None, object_type };
+        let mut object = GameObject {
+            id,
+            player: None,
+            enemy: None,
+            bullet: None,
+            object_type,
+        };
 
         match object_type {
             ObjectType::Enemy => object.enemy = Some(EnemyState::new(id, position, width, height)),
@@ -30,13 +36,25 @@ impl GameObject {
         let velocity = match shooter_type {
             ObjectType::Enemy => Velocity::new(0.0, 4.0),
             ObjectType::Player => Velocity::new(0.0, -4.0),
-            _ => panic!("Unknown shooter")
+            _ => panic!("Unknown shooter"),
         };
 
-        let bullet = Some(BulletState { position: position + Position::new(0.0, -35.0), shooter_type, shooter_id, velocity, is_destroyed: false });
+        let bullet = Some(BulletState {
+            position: position + Position::new(0.0, -35.0),
+            shooter_type,
+            shooter_id,
+            velocity,
+            is_destroyed: false,
+        });
         let object_type = ObjectType::Bullet;
 
-        GameObject { id, player: None, enemy: None, bullet, object_type }
+        GameObject {
+            id,
+            player: None,
+            enemy: None,
+            bullet,
+            object_type,
+        }
     }
 
     pub fn handle_input(&mut self, input_state: &[InputState]) {
@@ -54,7 +72,7 @@ impl GameObject {
             (Some(ref mut player), _, _) => player.draw(renderer, scene),
             (_, Some(ref mut enemy), _) => enemy.draw(renderer, scene),
             (_, _, Some(ref mut bullet)) => bullet.draw(renderer, scene),
-            _ => panic!("Incorrectly constructed object")
+            _ => panic!("Incorrectly constructed object"),
         }
     }
 
@@ -63,10 +81,12 @@ impl GameObject {
             (Some(ref mut player), _, _) => player.update(),
             (_, Some(ref mut enemy), _) => enemy.update(),
             (_, _, Some(ref mut bullet)) => bullet.update(),
-            _ => panic!("Incorrectly constructed or unknown object")
+            _ => panic!("Incorrectly constructed or unknown object"),
         };
 
-        if new_object.is_some() { new_objects.push(new_object); }
+        if new_object.is_some() {
+            new_objects.push(new_object);
+        }
 
         let position = self.position();
 
@@ -74,7 +94,9 @@ impl GameObject {
             ObjectType::Player => {
                 //fixme check if out of screen
             }
-            _ => if position.y < scene.position.y { self.destroy(); }
+            _ => if position.y < scene.position.y {
+                self.destroy();
+            },
         }
     }
 
@@ -83,7 +105,7 @@ impl GameObject {
             (Some(ref player), _, _) => player.position.clone(),
             (_, Some(ref enemy), _) => enemy.position.clone(),
             (_, _, Some(ref bullet)) => bullet.position.clone(),
-            _ => panic!("Incorrectly constructed or unknown object")
+            _ => panic!("Incorrectly constructed or unknown object"),
         }
     }
 
@@ -92,7 +114,7 @@ impl GameObject {
             (Some(ref player), _, _) => player.is_destroyed,
             (_, Some(ref enemy), _) => enemy.is_destroyed,
             (_, _, Some(ref bullet)) => bullet.is_destroyed,
-            _ => false
+            _ => false,
         }
     }
 
@@ -113,7 +135,7 @@ impl GameObject {
                     println!("Object {:?} was hit by object {:?}", collider, self);
                     true
                 }
-                _ => false
+                _ => false,
             }
         } else if collider.is_bullet() && !self.is_bullet() {
             hit = match &collider.bullet {
@@ -121,7 +143,7 @@ impl GameObject {
                     println!("Object {:?} was hit by object {:?}", self, collider);
                     true
                 }
-                _ => false
+                _ => false,
             }
         } else if !collider.is_bullet() && !self.is_bullet() {
             println!("Object {:?} collided with object {:?}", self, collider);
@@ -137,22 +159,26 @@ impl GameObject {
     pub fn check_collision(&mut self, collider: &mut GameObject) -> bool {
         let collided = match (self.collider(), collider.collider()) {
             (Some(a), Some(b)) => a.is_colliding(b),
-            _ => false
+            _ => false,
         };
 
-        if collided { self.collided_with(collider); }
+        if collided {
+            self.collided_with(collider);
+        }
 
         collided
     }
 
-    fn is_bullet(&self) -> bool { self.object_type == ObjectType::Bullet }
+    fn is_bullet(&self) -> bool {
+        self.object_type == ObjectType::Bullet
+    }
 
     fn collider(&self) -> Option<&CollisionState> {
         match (&self.player, &self.enemy, &self.bullet) {
             (Some(ref player), _, _) => Some(player),
             (_, Some(ref enemy), _) => Some(enemy),
             (_, _, Some(ref bullet)) => Some(bullet),
-            _ => None
+            _ => None,
         }
     }
 }
@@ -161,7 +187,11 @@ impl Debug for GameObject {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         let position = self.position();
         let object_type = self.object_type;
-        write!(f, "#{:?} of type: {:?} at {{ x: {}, y: {} }}", self.id, object_type, position.x, position.y);
+        write!(
+            f,
+            "#{:?} of type: {:?} at {{ x: {}, y: {} }}",
+            self.id, object_type, position.x, position.y
+        );
         Ok(())
     }
 }

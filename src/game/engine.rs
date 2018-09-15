@@ -6,9 +6,19 @@ use game::Renderer;
 use game::Scene;
 use std::mem;
 
-impl<R, I> Engine<R, I> where R: Renderer, I: InputHandler {
+impl<R, I> Engine<R, I>
+where
+    R: Renderer,
+    I: InputHandler,
+{
     pub fn new(game_objects: Vec<Option<GameObject>>, scene: Scene, renderer: R, input_handler: I) -> Engine<R, I> {
-        Engine { is_running: true, renderer, input_handler, scene, game_objects }
+        Engine {
+            is_running: true,
+            renderer,
+            input_handler,
+            scene,
+            game_objects,
+        }
     }
 
     pub fn draw(&mut self) {
@@ -51,8 +61,7 @@ impl<R, I> Engine<R, I> where R: Renderer, I: InputHandler {
     }
 
     fn add_new_objects(&mut self, new_objects: Vec<Option<GameObject>>) {
-        let mut next_new_object = new_objects.into_iter()
-            .filter(|obj| obj.is_some());
+        let mut next_new_object = new_objects.into_iter().filter(|obj| obj.is_some());
 
         for i in 0..self.game_objects.len() {
             if self.game_objects[i] == None {
@@ -189,7 +198,13 @@ mod tests {
         let mut player_state = PlayerState::new(1, Position::new(0.0, 0.0), 0, 0);
         player_state.is_destroyed = true;
 
-        let obj = Some(GameObject { player: Some(player_state), enemy: None, bullet: None, id: 1, object_type: ObjectType::Player });
+        let obj = Some(GameObject {
+            player: Some(player_state),
+            enemy: None,
+            bullet: None,
+            id: 1,
+            object_type: ObjectType::Player,
+        });
         let game_objects = vec![obj];
         let scene = create_fake_scene();
         let mut engine = Engine::new(game_objects, scene, MockRenderer {}, MockInputHandler {});
@@ -251,12 +266,8 @@ mod tests {
     #[test]
     fn test_updating_objects() {
         //given
-        let game_objects = vec![
-            None
-        ];
-        let new_objects = vec![
-            Some(create_fake_object(1)),
-        ];
+        let game_objects = vec![None];
+        let new_objects = vec![Some(create_fake_object(1))];
         let scene = create_fake_scene();
         let mut engine = Engine::new(game_objects, scene, MockRenderer {}, MockInputHandler {});
 
@@ -269,62 +280,74 @@ mod tests {
     #[test]
     fn test_updating_objects_with_expand() {
         //given
-        let game_objects = vec![
-            Some(create_fake_object(0))
-        ];
-        let new_objects = vec![
-            Some(create_fake_object(1)),
-            Some(create_fake_object(2)),
-        ];
+        let game_objects = vec![Some(create_fake_object(0))];
+        let new_objects = vec![Some(create_fake_object(1)), Some(create_fake_object(2))];
         let scene = create_fake_scene();
         let mut engine = Engine::new(game_objects, scene, MockRenderer {}, MockInputHandler {});
 
         //when
         engine.add_new_objects(new_objects);
 
-        assert_eq!(engine.game_objects, vec![Some(create_fake_object(0)), Some(create_fake_object(1)), Some(create_fake_object(2)), ]);
+        assert_eq!(
+            engine.game_objects,
+            vec![
+                Some(create_fake_object(0)),
+                Some(create_fake_object(1)),
+                Some(create_fake_object(2)),
+            ]
+        );
     }
 
     #[test]
     fn test_updating_objects_with_none_and_expand() {
         //given
-        let game_objects = vec![
-            None,
-            Some(create_fake_object(1))];
-        let new_objects = vec![
-            Some(create_fake_object(2)),
-            Some(create_fake_object(3)),
-        ];
+        let game_objects = vec![None, Some(create_fake_object(1))];
+        let new_objects = vec![Some(create_fake_object(2)), Some(create_fake_object(3))];
         let scene = create_fake_scene();
         let mut engine = Engine::new(game_objects, scene, MockRenderer {}, MockInputHandler {});
 
         //when
         engine.add_new_objects(new_objects);
 
-        assert_eq!(engine.game_objects, vec![Some(create_fake_object(2)), Some(create_fake_object(1)), Some(create_fake_object(3))]);
+        assert_eq!(
+            engine.game_objects,
+            vec![
+                Some(create_fake_object(2)),
+                Some(create_fake_object(1)),
+                Some(create_fake_object(3))
+            ]
+        );
     }
 
     #[test]
     fn test_updating_objects_with_none_in_new_objects_and_expand() {
         //given
-        let game_objects = vec![
-            None,
-            Some(create_fake_object(1))];
+        let game_objects = vec![None, Some(create_fake_object(1))];
 
-        let new_objects = vec![
-            Some(create_fake_object(2)),
-            None
-        ];
+        let new_objects = vec![Some(create_fake_object(2)), None];
         let scene = create_fake_scene();
         let mut engine = Engine::new(game_objects, scene, MockRenderer {}, MockInputHandler {});
 
         //when
         engine.add_new_objects(new_objects);
 
-        assert_eq!(engine.game_objects, vec![Some(create_fake_object(2)), Some(create_fake_object(1))]);
+        assert_eq!(
+            engine.game_objects,
+            vec![Some(create_fake_object(2)), Some(create_fake_object(1))]
+        );
     }
 
-    fn create_fake_object(id: Id) -> GameObject { GameObject { id, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None } }
+    fn create_fake_object(id: Id) -> GameObject {
+        GameObject {
+            id,
+            object_type: ObjectType::Unknown,
+            player: None,
+            enemy: None,
+            bullet: None,
+        }
+    }
 
-    fn create_fake_scene() -> Scene { Scene::new(1000, 1000, vec![]) }
+    fn create_fake_scene() -> Scene {
+        Scene::new(1000, 1000, vec![])
+    }
 }

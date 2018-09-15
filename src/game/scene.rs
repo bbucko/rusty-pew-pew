@@ -4,7 +4,12 @@ use game::Scene;
 impl Scene {
     pub fn new(width: u32, height: u32, tiles: Vec<u8>) -> Scene {
         let position = Position::new(0.0, ((height * 32) - 480) as f32);
-        Scene { position, width, height, tiles }
+        Scene {
+            position,
+            width,
+            height,
+            tiles,
+        }
     }
 
     pub fn update(&mut self) {

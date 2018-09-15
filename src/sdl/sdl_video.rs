@@ -10,7 +10,7 @@ use sdl::sdl2::render::TextureCreator;
 use sdl::sdl2::video::Window;
 use sdl::sdl2::video::WindowContext;
 use sdl::SDLEngine;
-use sdl::SDLRenderer as SDLRenderer;
+use sdl::SDLRenderer;
 use sdl::TextureManager;
 use sdl::TextureWrapper;
 use std::collections::HashMap;
@@ -72,9 +72,11 @@ impl<'a> SDLRenderer<'a> {
         (canvas, texture_creator)
     }
 
-    pub fn new(canvas: Canvas<Window>,
-               mut texture_manager: TextureManager<'a, WindowContext>,
-               mut texture_wrappers: HashMap<String, TextureWrapper>) -> Self {
+    pub fn new(
+        canvas: Canvas<Window>,
+        mut texture_manager: TextureManager<'a, WindowContext>,
+        mut texture_wrappers: HashMap<String, TextureWrapper>,
+    ) -> Self {
         Self::load_textures(&mut texture_manager, &mut texture_wrappers);
 
         Self {
@@ -84,8 +86,10 @@ impl<'a> SDLRenderer<'a> {
         }
     }
 
-    fn load_textures(texture_manager: &mut TextureManager<'a, WindowContext>,
-                     texture_wrappers: &mut HashMap<String, TextureWrapper>) {
+    fn load_textures(
+        texture_manager: &mut TextureManager<'a, WindowContext>,
+        texture_wrappers: &mut HashMap<String, TextureWrapper>,
+    ) {
         let mut textures = Vec::new();
         parsers::game_file::parse(&mut textures, texture_wrappers);
 
