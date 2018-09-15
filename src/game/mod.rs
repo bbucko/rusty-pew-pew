@@ -1,4 +1,5 @@
 use cgmath::Vector2;
+use sdl2::rect::Rect;
 use std::time::SystemTime;
 
 pub mod states;
@@ -62,7 +63,6 @@ pub struct GameObject {
     pub player: Option<PlayerState>,
     pub enemy: Option<EnemyState>,
     pub bullet: Option<BulletState>,
-    pub collider: Option<CollisionState>,
 }
 
 #[derive(Debug, PartialEq)]
@@ -74,6 +74,8 @@ pub struct PlayerState {
     pub is_destroyed: bool,
     last_shot_date: SystemTime,
     velocity: Velocity,
+    width: u32,
+    height: u32,
 }
 
 #[derive(Debug, PartialEq)]
@@ -81,6 +83,8 @@ pub struct EnemyState {
     id: Id,
     position: Position,
     pub is_destroyed: bool,
+    width: u32,
+    height: u32,
 }
 
 #[derive(Debug, PartialEq)]
@@ -89,12 +93,17 @@ pub struct BulletState {
     velocity: Velocity,
     shooter_type: ObjectType,
     shooter_id: Id,
-    pub is_destroyed: bool
+    pub is_destroyed: bool,
 }
 
-#[derive(Debug, PartialEq)]
-pub struct CollisionState {
-    position: Position,
-    height: u32,
-    width: u32,
+trait CollisionState {
+    fn position(&self) -> Position;
+    fn size(&self) -> (u32, u32);
+
+    fn is_colliding(&self, with: &CollisionState) -> bool {
+        let padding = 10;
+        let a = Rect::new(self.position().x as i32, self.position().y as i32, self.size().0 - padding, self.size().1 - padding);
+        let b = Rect::new(with.position().x as i32, with.position().y as i32, with.size().0 - padding, with.size().1 - padding);
+        a.has_intersection(b)
+    }
 }

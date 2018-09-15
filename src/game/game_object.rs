@@ -15,22 +15,18 @@ use std::fmt::Error;
 use std::fmt::Formatter;
 
 impl GameObject {
-    pub fn new(id: Id, position: Position, object_type: ObjectType, height: u32, width: u32) -> Self {
-        let collider = Some(CollisionState { position: position.clone(), height, width });
-
-        let mut object = GameObject { id, player: None, enemy: None, bullet: None, collider, object_type };
+    pub fn new(id: Id, position: Position, object_type: ObjectType, width: u32, height: u32) -> Self {
+        let mut object = GameObject { id, player: None, enemy: None, bullet: None, object_type };
 
         match object_type {
-            ObjectType::Enemy => object.enemy = Some(EnemyState::new(id, position)),
-            ObjectType::Player => object.player = Some(PlayerState::new(id, position)),
+            ObjectType::Enemy => object.enemy = Some(EnemyState::new(id, position, width, height)),
+            ObjectType::Player => object.player = Some(PlayerState::new(id, position, width, height)),
             _ => panic!("unknown type: {:?}", object_type),
         }
         object
     }
 
     pub fn new_bullet(id: Id, position: Position, shooter_type: ObjectType, shooter_id: Id) -> Self {
-        let collider = Some(CollisionState { position, height: 30, width: 16 });
-
         let velocity = match shooter_type {
             ObjectType::Enemy => Velocity::new(0.0, 4.0),
             ObjectType::Player => Velocity::new(0.0, -4.0),
@@ -40,7 +36,7 @@ impl GameObject {
         let bullet = Some(BulletState { position: position + Position::new(0.0, -35.0), shooter_type, shooter_id, velocity, is_destroyed: false });
         let object_type = ObjectType::Bullet;
 
-        GameObject { id, player: None, enemy: None, bullet, collider, object_type }
+        GameObject { id, player: None, enemy: None, bullet, object_type }
     }
 
     pub fn handle_input(&mut self, input_state: &[InputState]) {
@@ -79,12 +75,6 @@ impl GameObject {
                 //fixme check if out of screen
             }
             _ => if position.y < scene.position.y { self.destroy(); }
-        }
-
-
-        match &mut self.collider {
-            Some(collider) => collider.position = position,
-            _ => {}
         }
     }
 
@@ -134,6 +124,7 @@ impl GameObject {
                 _ => false
             }
         }
+
         if hit {
             collider.destroy();
             self.destroy();
@@ -141,31 +132,33 @@ impl GameObject {
     }
 
     pub fn check_collision(&mut self, collider: &mut GameObject) -> bool {
-        let collided = match (&self.collider, &collider.collider) {
-            (Some(ref a), Some(ref b)) => a.is_colliding(&b),
+        let collided = match (self.collider(), collider.collider()) {
+            (Some(a), Some(b)) => a.is_colliding(b),
             _ => false
         };
 
-        if collided {
-            self.collided_with(collider);
-        }
+        if collided { self.collided_with(collider); }
 
         collided
     }
 
     fn is_bullet(&self) -> bool { self.object_type == ObjectType::Bullet }
+
+    fn collider(&self) -> Option<&CollisionState> {
+        match (&self.player, &self.enemy, &self.bullet) {
+            (Some(ref player), _, _) => Some(player),
+            (_, Some(ref enemy), _) => Some(enemy),
+            (_, _, Some(ref bullet)) => Some(bullet),
+            _ => None
+        }
+    }
 }
 
 impl Debug for GameObject {
     fn fmt(&self, f: &mut Formatter) -> Result<(), Error> {
         let position = self.position();
-        let object_type = match (&self.player, &self.enemy, &self.bullet) {
-            (Some(_), None, None) => "player",
-            (None, Some(_), None) => "enemy",
-            (None, None, Some(_)) => "bullet",
-            _ => "unknown",
-        };
-        write!(f, "GameObject #{:?} of type: {} at {{ x: {}, y: {} }}", self.id, object_type, position.x, position.y);
+        let object_type = self.object_type;
+        write!(f, "GameObject #{:?} of type: {:?} at {{ x: {}, y: {} }}", self.id, object_type, position.x, position.y);
         Ok(())
     }
 }

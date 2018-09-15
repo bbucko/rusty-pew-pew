@@ -107,6 +107,7 @@ impl<R, I> Engine<R, I> where R: Renderer, I: InputHandler {
 mod tests {
     use game::Engine;
     use game::GameObject;
+    use game::Id;
     use game::InputHandler;
     use game::InputState;
     use game::ObjectType;
@@ -144,12 +145,7 @@ mod tests {
     fn test_removal_of_empty_list() {
         //given
         let game_objects = vec![];
-        let scene = Scene {
-            position: Position::new(0.0, 0.0),
-            width: 0,
-            height: 0,
-            tiles: Vec::new(),
-        };
+        let scene = create_fake_scene();
         let mut engine = Engine::new(game_objects, scene, MockRenderer {}, MockInputHandler {});
 
         //when
@@ -163,12 +159,7 @@ mod tests {
     fn test_removal_of_list_of_none() {
         //given
         let game_objects = vec![None];
-        let scene = Scene {
-            position: Position::new(0.0, 0.0),
-            width: 0,
-            height: 0,
-            tiles: Vec::new(),
-        };
+        let scene = create_fake_scene();
         let mut engine = Engine::new(game_objects, scene, MockRenderer {}, MockInputHandler {});
 
         //when
@@ -181,37 +172,27 @@ mod tests {
     #[test]
     fn test_removal_of_list_of_some_non_removable_objects() {
         //given
-        let obj = Some(GameObject { bullet: None, enemy: None, id: 1, object_type: ObjectType::Unknown, player: None, collider: None });
+        let obj = Some(create_fake_object(1));
         let game_objects = vec![obj];
-        let scene = Scene {
-            position: Position::new(0.0, 0.0),
-            width: 0,
-            height: 0,
-            tiles: Vec::new(),
-        };
+        let scene = create_fake_scene();
         let mut engine = Engine::new(game_objects, scene, MockRenderer {}, MockInputHandler {});
 
         //when
         engine.remove_destroyed_objects();
 
         //then
-        assert_eq!(engine.game_objects[0], Some(GameObject { bullet: None, enemy: None, id: 1, object_type: ObjectType::Unknown, player: None, collider: None }));
+        assert_eq!(engine.game_objects[0], Some(create_fake_object(1)));
     }
 
     #[test]
     fn test_removal_of_list_of_some_removable_objects() {
         //given
-        let mut player_state = PlayerState::new(1, Position::new(0.0, 0.0));
+        let mut player_state = PlayerState::new(1, Position::new(0.0, 0.0), 0, 0);
         player_state.is_destroyed = true;
 
-        let obj = Some(GameObject { player: Some(player_state), enemy: None, bullet: None, id: 1, object_type: ObjectType::Unknown, collider: None });
+        let obj = Some(GameObject { player: Some(player_state), enemy: None, bullet: None, id: 1, object_type: ObjectType::Player });
         let game_objects = vec![obj];
-        let scene = Scene {
-            position: Position::new(0.0, 0.0),
-            width: 0,
-            height: 0,
-            tiles: Vec::new(),
-        };
+        let scene = create_fake_scene();
         let mut engine = Engine::new(game_objects, scene, MockRenderer {}, MockInputHandler {});
 
         //when
@@ -225,20 +206,15 @@ mod tests {
     fn test_collisions() {
         //given
         let game_objects = vec![
-            Some(GameObject { bullet: None, enemy: None, id: 1, object_type: ObjectType::Unknown, player: None, collider: None }),
-            Some(GameObject { bullet: None, enemy: None, id: 2, object_type: ObjectType::Unknown, player: None, collider: None }),
-            Some(GameObject { bullet: None, enemy: None, id: 3, object_type: ObjectType::Unknown, player: None, collider: None }),
-            Some(GameObject { bullet: None, enemy: None, id: 4, object_type: ObjectType::Unknown, player: None, collider: None }),
-            Some(GameObject { bullet: None, enemy: None, id: 5, object_type: ObjectType::Unknown, player: None, collider: None }),
-            Some(GameObject { bullet: None, enemy: None, id: 6, object_type: ObjectType::Unknown, player: None, collider: None }),
-            Some(GameObject { bullet: None, enemy: None, id: 7, object_type: ObjectType::Unknown, player: None, collider: None })
+            Some(create_fake_object(1)),
+            Some(create_fake_object(2)),
+            Some(create_fake_object(3)),
+            Some(create_fake_object(4)),
+            Some(create_fake_object(5)),
+            Some(create_fake_object(6)),
+            Some(create_fake_object(7)),
         ];
-        let scene = Scene {
-            position: Position::new(0.0, 0.0),
-            width: 0,
-            height: 0,
-            tiles: Vec::new(),
-        };
+        let scene = create_fake_scene();
         let mut engine = Engine::new(game_objects, scene, MockRenderer {}, MockInputHandler {});
 
         //when
@@ -252,23 +228,18 @@ mod tests {
     fn test_collisions_with_empty_cells() {
         //given
         let game_objects = vec![
-            Some(GameObject { bullet: None, enemy: None, id: 1, object_type: ObjectType::Unknown, player: None, collider: None }),
-            Some(GameObject { bullet: None, enemy: None, id: 2, object_type: ObjectType::Unknown, player: None, collider: None }),
-            Some(GameObject { bullet: None, enemy: None, id: 3, object_type: ObjectType::Unknown, player: None, collider: None }),
+            Some(create_fake_object(1)),
+            Some(create_fake_object(2)),
+            Some(create_fake_object(3)),
             None,
-            Some(GameObject { bullet: None, enemy: None, id: 4, object_type: ObjectType::Unknown, player: None, collider: None }),
-            Some(GameObject { bullet: None, enemy: None, id: 5, object_type: ObjectType::Unknown, player: None, collider: None }),
+            Some(create_fake_object(4)),
+            Some(create_fake_object(5)),
             None,
-            Some(GameObject { bullet: None, enemy: None, id: 6, object_type: ObjectType::Unknown, player: None, collider: None }),
+            Some(create_fake_object(6)),
             None,
-            Some(GameObject { bullet: None, enemy: None, id: 7, object_type: ObjectType::Unknown, player: None, collider: None })
+            Some(create_fake_object(7)),
         ];
-        let scene = Scene {
-            position: Position::new(0.0, 0.0),
-            width: 0,
-            height: 0,
-            tiles: Vec::new(),
-        };
+        let scene = create_fake_scene();
         let mut engine = Engine::new(game_objects, scene, MockRenderer {}, MockInputHandler {});
 
         //when
@@ -281,46 +252,38 @@ mod tests {
     #[test]
     fn test_updating_objects() {
         //given
-        let game_objects = vec![None];
-        let new_objects = vec![
-            Some(GameObject { id: 0, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None })
+        let game_objects = vec![
+            None
         ];
-        let scene = Scene {
-            position: Position::new(0.0, 0.0),
-            width: 0,
-            height: 0,
-            tiles: Vec::new(),
-        };
+        let new_objects = vec![
+            Some(create_fake_object(1)),
+        ];
+        let scene = create_fake_scene();
         let mut engine = Engine::new(game_objects, scene, MockRenderer {}, MockInputHandler {});
 
         //when
         engine.add_new_objects(new_objects);
 
-        assert_eq!(engine.game_objects, vec![Some(GameObject { id: 0, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None })]);
+        assert_eq!(engine.game_objects, vec![Some(create_fake_object(1))]);
     }
 
     #[test]
     fn test_updating_objects_with_expand() {
         //given
         let game_objects = vec![
-            Some(GameObject { id: 0, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None })
+            Some(create_fake_object(0))
         ];
         let new_objects = vec![
-            Some(GameObject { id: 1, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None }),
-            Some(GameObject { id: 2, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None }),
+            Some(create_fake_object(1)),
+            Some(create_fake_object(2)),
         ];
-        let scene = Scene {
-            position: Position::new(0.0, 0.0),
-            width: 0,
-            height: 0,
-            tiles: Vec::new(),
-        };
+        let scene = create_fake_scene();
         let mut engine = Engine::new(game_objects, scene, MockRenderer {}, MockInputHandler {});
 
         //when
         engine.add_new_objects(new_objects);
 
-        assert_eq!(engine.game_objects, vec![Some(GameObject { id: 0, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None }), Some(GameObject { id: 1, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None }), Some(GameObject { id: 2, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None })]);
+        assert_eq!(engine.game_objects, vec![Some(create_fake_object(0)), Some(create_fake_object(1)), Some(create_fake_object(2)), ]);
     }
 
     #[test]
@@ -328,23 +291,18 @@ mod tests {
         //given
         let game_objects = vec![
             None,
-            Some(GameObject { id: 1, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None })];
+            Some(create_fake_object(1))];
         let new_objects = vec![
-            Some(GameObject { id: 2, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None }),
-            Some(GameObject { id: 3, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None }),
+            Some(create_fake_object(2)),
+            Some(create_fake_object(3)),
         ];
-        let scene = Scene {
-            position: Position::new(0.0, 0.0),
-            width: 0,
-            height: 0,
-            tiles: Vec::new(),
-        };
+        let scene = create_fake_scene();
         let mut engine = Engine::new(game_objects, scene, MockRenderer {}, MockInputHandler {});
 
         //when
         engine.add_new_objects(new_objects);
 
-        assert_eq!(engine.game_objects, vec![Some(GameObject { id: 2, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None }), Some(GameObject { id: 1, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None }), Some(GameObject { id: 3, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None })]);
+        assert_eq!(engine.game_objects, vec![Some(create_fake_object(2)), Some(create_fake_object(1)), Some(create_fake_object(3))]);
     }
 
     #[test]
@@ -352,23 +310,22 @@ mod tests {
         //given
         let game_objects = vec![
             None,
-            Some(GameObject { id: 1, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None })];
+            Some(create_fake_object(1))];
 
         let new_objects = vec![
-            Some(GameObject { id: 2, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None }),
+            Some(create_fake_object(2)),
             None
         ];
-        let scene = Scene {
-            position: Position::new(0.0, 0.0),
-            width: 0,
-            height: 0,
-            tiles: Vec::new(),
-        };
+        let scene = create_fake_scene();
         let mut engine = Engine::new(game_objects, scene, MockRenderer {}, MockInputHandler {});
 
         //when
         engine.add_new_objects(new_objects);
 
-        assert_eq!(engine.game_objects, vec![Some(GameObject { id: 2, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None }), Some(GameObject { id: 1, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None, collider: None })]);
+        assert_eq!(engine.game_objects, vec![Some(create_fake_object(2)), Some(create_fake_object(1))]);
     }
+
+    fn create_fake_object(id: Id) -> GameObject { GameObject { id, object_type: ObjectType::Unknown, player: None, enemy: None, bullet: None } }
+
+    fn create_fake_scene() -> Scene { Scene::new(1000, 1000, vec![]) }
 }

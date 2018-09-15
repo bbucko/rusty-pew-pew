@@ -10,7 +10,6 @@ use game::Position;
 use game::Renderer;
 use game::Scene;
 use game::Velocity;
-use sdl2::rect::Rect;
 use std::collections::HashMap;
 use std::num::ParseFloatError;
 use std::num::ParseIntError;
@@ -57,8 +56,8 @@ fn parse_int(properties: &HashMap<String, String>, attribute_name: &str) -> Resu
 }
 
 impl PlayerState {
-    pub fn new(id: Id, position: Position) -> Self {
-        PlayerState { id, position, frame: 0, is_shooting: false, last_shot_date: SystemTime::now(), is_destroyed: false, velocity: Velocity::new(0.0, 0.0) }
+    pub fn new(id: Id, position: Position, width: u32, height: u32) -> Self {
+        PlayerState { id, position, frame: 0, is_shooting: false, last_shot_date: SystemTime::now(), is_destroyed: false, velocity: Velocity::new(0.0, 0.0), width, height }
     }
 
     pub fn input(&mut self, input_state: &[InputState]) {
@@ -106,8 +105,8 @@ impl PlayerState {
 
 
 impl EnemyState {
-    pub fn new(id: Id, position: Position) -> EnemyState {
-        EnemyState { id, position, is_destroyed: false }
+    pub fn new(id: Id, position: Position, width: u32, height: u32) -> EnemyState {
+        EnemyState { id, position, is_destroyed: false, width, height }
     }
 
     pub fn input(&mut self, _input_state: &[InputState]) {}
@@ -137,11 +136,20 @@ impl BulletState {
     pub fn is_fired_by(&self, shooter: &GameObject) -> bool { self.shooter_id == shooter.id }
 }
 
-impl CollisionState {
-    pub fn is_colliding(&self, with: &CollisionState) -> bool {
-        let padding = 0;
-        let a = Rect::new(self.position.x as i32, self.position.y as i32, self.width - padding, self.height - padding);
-        let b = Rect::new(with.position.x as i32, with.position.y as i32, with.width - padding, with.height - padding);
-        a.has_intersection(b)
-    }
+impl CollisionState for BulletState {
+    fn position(&self) -> Position { self.position }
+
+    fn size(&self) -> (u32, u32) { (32, 32) }
+}
+
+impl CollisionState for PlayerState {
+    fn position(&self) -> Position { self.position }
+
+    fn size(&self) -> (u32, u32) { (64, 64) }
+}
+
+impl CollisionState for EnemyState {
+    fn position(&self) -> Position { self.position }
+
+    fn size(&self) -> (u32, u32) { (64, 64) }
 }
