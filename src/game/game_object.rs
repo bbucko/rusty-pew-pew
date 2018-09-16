@@ -78,7 +78,7 @@ impl GameObject {
 
     pub fn update(&mut self, new_objects: &mut Vec<Option<GameObject>>, scene: &Scene) {
         let new_object = match (&mut self.player, &mut self.enemy, &mut self.bullet) {
-            (Some(ref mut player), _, _) => player.update(),
+            (Some(ref mut player), _, _) => player.update(scene),
             (_, Some(ref mut enemy), _) => enemy.update(),
             (_, _, Some(ref mut bullet)) => bullet.update(),
             _ => panic!("Incorrectly constructed or unknown object"),

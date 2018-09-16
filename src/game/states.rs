@@ -27,11 +27,11 @@ pub fn create_game_object(properties: &HashMap<String, String>) -> Result<GameOb
         .get("type")
         .unwrap_or_else(|| panic!("Unknown type"))
         .as_str()
-    {
-        "Player" => ObjectType::Player,
-        "Enemy" => ObjectType::Enemy,
-        _ => ObjectType::Unknown,
-    };
+        {
+            "Player" => ObjectType::Player,
+            "Enemy" => ObjectType::Enemy,
+            _ => ObjectType::Unknown,
+        };
 
     let height = parse_int(properties, "height")?;
     let width = parse_int(properties, "width")?;
@@ -90,9 +90,7 @@ impl PlayerState {
                 InputState::Down => new_velocity += Velocity::new(0.0, 2.0),
                 InputState::Left => new_velocity += Velocity::new(-2.0, 0.0),
                 InputState::Right => new_velocity += Velocity::new(2.0, 0.0),
-                InputState::Shoot => if self.is_allowed_to_shoot() {
-                    self.is_shooting = true
-                },
+                InputState::Shoot => self.is_shooting = true,
                 _ => self.velocity = Velocity::new(0.0, 0.0),
             }
         }
@@ -103,23 +101,40 @@ impl PlayerState {
         renderer.draw_frame("plane", self.position, self.frame, scene);
     }
 
-    pub fn update(&mut self) -> Option<GameObject> {
+    pub fn update(&mut self, scene: &Scene) -> Option<GameObject> {
         self.frame = (self.frame + 1) % 3;
-        self.position += self.velocity;
 
-        match self.is_shooting {
-            true => Some(self.shoots()),
-            false => None,
+        self.position += self.calculate_velocity(scene);
+
+        if self.is_shooting && self.is_allowed_to_shoot() {
+            Some(self.shoots())
+        } else {
+            None
         }
     }
 
-    pub fn is_allowed_to_shoot(&self) -> bool {
+    fn calculate_velocity(&self, scene: &Scene) -> Velocity {
+        let mut velocity = self.velocity;
+        let new_position = self.position + velocity;
+
+        if new_position.x <= 0.0 || new_position.x >= (self.width + scene.width * 32) as f32 {
+            velocity.x = 0.0;
+        }
+
+        if new_position.y <= scene.position.y || new_position.y - self.height as f32 >= scene.position.y + 480.0  {
+            velocity.y = 0.0;
+        }
+
+        velocity
+    }
+
+    fn is_allowed_to_shoot(&self) -> bool {
         let now = SystemTime::now();
         let duration = now.duration_since(self.last_shot_date).unwrap();
         duration.ge(&SHOOT_DELAY)
     }
 
-    pub fn shoots(&mut self) -> GameObject {
+    fn shoots(&mut self) -> GameObject {
         self.is_shooting = false;
         self.last_shot_date = SystemTime::now();
 
