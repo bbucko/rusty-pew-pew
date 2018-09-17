@@ -14,6 +14,6 @@ impl Scene {
     }
 
     pub fn update(&mut self) {
-        self.position += Position::new(0, 0)
+        self.position += Position::new(0, -1)
     }
 }

@@ -75,7 +75,7 @@ impl PlayerState {
     }
 
     pub fn input(&mut self, input_state: &[InputState]) {
-        let mut new_velocity = Velocity::new(0, 0);
+        let mut new_velocity = Velocity::new(0, -1);
         for input in input_state {
             match input {
                 InputState::Up => new_velocity += Velocity::new(0, -2),
@@ -83,7 +83,7 @@ impl PlayerState {
                 InputState::Left => new_velocity += Velocity::new(-2, 0),
                 InputState::Right => new_velocity += Velocity::new(2, 0),
                 InputState::Shoot => self.is_shooting = true,
-                _ => self.velocity = Velocity::new(0, 0),
+                _ => {}
             }
         }
         self.velocity = new_velocity;
@@ -106,18 +106,19 @@ impl PlayerState {
     }
 
     fn calculate_velocity(&self, scene: &Scene) -> Velocity {
-        let mut velocity = self.velocity;
-        let new_position = self.position + velocity;
+        let (screen_width, screen_height) = SCREEN_SIZE;
+        let mut fixed_velocity = self.velocity;
+        let new_position = self.position + fixed_velocity;
 
-        if new_position.x <= 0 || new_position.x as u32 + self.width >= SCREEN_SIZE.0 {
-            velocity.x = 0;
+        if new_position.x <= 0 || new_position.x + self.width as i32 >= screen_width as i32 {
+            fixed_velocity.x = 0;
         }
 
-        if new_position.y <= scene.position.y || new_position.y as u32 + self.height >= scene.position.y as u32 + SCREEN_SIZE.1 {
-            velocity.y = 0;
+        if new_position.y <= scene.position.y || new_position.y + self.height as i32 >= scene.position.y + screen_height as i32 {
+            fixed_velocity.y = -1;
         }
 
-        velocity
+        fixed_velocity
     }
 
     fn is_allowed_to_shoot(&self) -> bool {
@@ -142,6 +143,7 @@ impl EnemyState {
             is_destroyed: false,
             width,
             height,
+            velocity: Velocity::new(1, -1),
         }
     }
 
@@ -152,6 +154,12 @@ impl EnemyState {
     }
 
     pub fn update(&mut self) -> Option<GameObject> {
+        if self.position.x == 0 as i32 {
+            self.velocity.x = 1;
+        } else if self.position.x + self.width as i32 == SCREEN_SIZE.0 as i32 {
+            self.velocity.x = -1;
+        }
+        self.position += self.velocity;
         None
     }
 }
@@ -162,7 +170,7 @@ impl BulletState {
             shooter_type: ObjectType::Enemy,
             shooter_id: enemy.id,
             position: enemy.position,
-            velocity: Velocity::new(0, 4),
+            velocity: Velocity::new(0, 8),
             is_destroyed: false,
         }
     }

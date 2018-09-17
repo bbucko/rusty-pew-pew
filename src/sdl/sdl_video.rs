@@ -58,9 +58,9 @@ impl<'a> Renderer for SDLRenderer<'a> {
 impl<'a> SDLRenderer<'a> {
     pub fn init(engine: &SDLEngine) -> (Canvas<Window>, TextureCreator<WindowContext>) {
         let video_subsystem = engine.context.video().unwrap();
-
+        let (screen_width, screen_height) = SCREEN_SIZE;
         let window = video_subsystem
-            .window("rusty pew pew", SCREEN_SIZE.0, SCREEN_SIZE.1)
+            .window("rusty pew pew", screen_width, screen_height)
             .position_centered()
             .opengl()
             .build()
@@ -113,13 +113,13 @@ impl TextureWrapper {
             frames,
         }
     }
-    pub fn src_rect(&self, _frame: u8) -> Rect {
+    pub fn src_rect(&self, frame: u8) -> Rect {
         let padding = self.padding as u32;
 
         let width = self.width;
         let height = self.height;
-        let x = padding as i32;
-        let y = padding as i32;
+        let x = (frame as u32 * (width + padding) + padding) as i32;
+        let y = (frame as u32 * (width + padding) + padding) as i32;
         Rect::new(x, y, width, height)
     }
 }

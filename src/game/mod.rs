@@ -83,6 +83,7 @@ pub struct PlayerState {
 pub struct EnemyState {
     id: Id,
     position: Position,
+    velocity: Velocity,
     pub is_destroyed: bool,
     width: u32,
     height: u32,

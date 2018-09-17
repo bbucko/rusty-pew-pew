@@ -90,13 +90,8 @@ impl GameObject {
 
         let position = self.position();
 
-        match self.object_type {
-            ObjectType::Player => {
-                //fixme check if out of screen
-            }
-            _ => if position.y < scene.position.y {
-                self.destroy();
-            },
+        if position.y < scene.position.y {
+            self.destroy();
         }
     }
 
