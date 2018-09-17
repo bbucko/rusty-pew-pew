@@ -3,6 +3,7 @@ use game::Position;
 use game::Renderer;
 use game::Scene;
 use helpers::parsers;
+use SCREEN_SIZE;
 use sdl::sdl2::pixels::Color;
 use sdl::sdl2::rect::Rect;
 use sdl::sdl2::render::Canvas;
@@ -59,7 +60,7 @@ impl<'a> SDLRenderer<'a> {
         let video_subsystem = engine.context.video().unwrap();
 
         let window = video_subsystem
-            .window("rusty pew pew", 800, 600)
+            .window("rusty pew pew", SCREEN_SIZE.0, SCREEN_SIZE.1)
             .position_centered()
             .opengl()
             .build()

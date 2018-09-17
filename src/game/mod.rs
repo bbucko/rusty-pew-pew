@@ -7,8 +7,8 @@ mod misc;
 mod scene;
 pub mod states;
 
-pub type Position = Vector2<f32>;
-pub type Velocity = Vector2<f32>;
+pub type Position = Vector2<i32>;
+pub type Velocity = Vector2<i32>;
 pub type Id = usize;
 
 const RECT_PADDING: u32 = 2;
@@ -98,8 +98,8 @@ pub struct BulletState {
 }
 
 struct Rect {
-    x: u32,
-    y: u32,
+    x: i32,
+    y: i32,
     width: u32,
     height: u32,
 }

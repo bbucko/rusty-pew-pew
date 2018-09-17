@@ -195,7 +195,7 @@ mod tests {
     #[test]
     fn test_removal_of_list_of_some_removable_objects() {
         //given
-        let mut player_state = PlayerState::new(1, Position::new(0.0, 0.0), 0, 0);
+        let mut player_state = PlayerState::new(1, Position::new(0, 0), 0, 0);
         player_state.is_destroyed = true;
 
         let obj = Some(GameObject {

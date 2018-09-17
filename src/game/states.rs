@@ -10,8 +10,8 @@ use game::Position;
 use game::Renderer;
 use game::Scene;
 use game::Velocity;
+use SCREEN_SIZE;
 use std::collections::HashMap;
-use std::num::ParseFloatError;
 use std::num::ParseIntError;
 use std::sync::atomic::{self, AtomicUsize};
 use std::time::Duration;
@@ -35,8 +35,8 @@ pub fn create_game_object(properties: &HashMap<String, String>) -> Result<GameOb
 
     let height = parse_int(properties, "height")?;
     let width = parse_int(properties, "width")?;
-    let x = parse_float(properties, "x")?;
-    let y = parse_float(properties, "y")?;
+    let x = parse_int(properties, "x")? as i32;
+    let y = parse_int(properties, "y")? as i32;
 
     Ok(GameObject::new(
         next_id(),
@@ -49,14 +49,6 @@ pub fn create_game_object(properties: &HashMap<String, String>) -> Result<GameOb
 
 fn next_id() -> Id {
     OBJECT_COUNTER.fetch_add(1, atomic::Ordering::SeqCst)
-}
-
-fn parse_float(properties: &HashMap<String, String>, attribute_name: &str) -> Result<f32, String> {
-    properties
-        .get(attribute_name)
-        .unwrap_or_else(|| panic!("Missing: {:?}", attribute_name))
-        .parse()
-        .map_err(|e: ParseFloatError| e.to_string())
 }
 
 fn parse_int(properties: &HashMap<String, String>, attribute_name: &str) -> Result<u32, String> {
@@ -76,22 +68,22 @@ impl PlayerState {
             is_shooting: false,
             last_shot_date: SystemTime::now(),
             is_destroyed: false,
-            velocity: Velocity::new(0.0, 0.0),
+            velocity: Velocity::new(0, 0),
             width,
             height,
         }
     }
 
     pub fn input(&mut self, input_state: &[InputState]) {
-        let mut new_velocity = Velocity::new(0.0, 0.0);
+        let mut new_velocity = Velocity::new(0, 0);
         for input in input_state {
             match input {
-                InputState::Up => new_velocity += Velocity::new(0.0, -2.0),
-                InputState::Down => new_velocity += Velocity::new(0.0, 2.0),
-                InputState::Left => new_velocity += Velocity::new(-2.0, 0.0),
-                InputState::Right => new_velocity += Velocity::new(2.0, 0.0),
+                InputState::Up => new_velocity += Velocity::new(0, -2),
+                InputState::Down => new_velocity += Velocity::new(0, 2),
+                InputState::Left => new_velocity += Velocity::new(-2, 0),
+                InputState::Right => new_velocity += Velocity::new(2, 0),
                 InputState::Shoot => self.is_shooting = true,
-                _ => self.velocity = Velocity::new(0.0, 0.0),
+                _ => self.velocity = Velocity::new(0, 0),
             }
         }
         self.velocity = new_velocity;
@@ -117,12 +109,12 @@ impl PlayerState {
         let mut velocity = self.velocity;
         let new_position = self.position + velocity;
 
-        if new_position.x <= 0.0 || new_position.x >= (self.width + scene.width * 32) as f32 {
-            velocity.x = 0.0;
+        if new_position.x <= 0 || new_position.x as u32 + self.width >= SCREEN_SIZE.0 {
+            velocity.x = 0;
         }
 
-        if new_position.y <= scene.position.y || new_position.y - self.height as f32 >= scene.position.y + 480.0  {
-            velocity.y = 0.0;
+        if new_position.y <= scene.position.y || new_position.y as u32 + self.height >= scene.position.y as u32 + SCREEN_SIZE.1 {
+            velocity.y = 0;
         }
 
         velocity
@@ -170,7 +162,7 @@ impl BulletState {
             shooter_type: ObjectType::Enemy,
             shooter_id: enemy.id,
             position: enemy.position,
-            velocity: Velocity::new(0.0, 4.0),
+            velocity: Velocity::new(0, 4),
             is_destroyed: false,
         }
     }

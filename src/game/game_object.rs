@@ -34,13 +34,13 @@ impl GameObject {
 
     pub fn new_bullet(id: Id, position: Position, shooter_type: ObjectType, shooter_id: Id) -> Self {
         let velocity = match shooter_type {
-            ObjectType::Enemy => Velocity::new(0.0, 4.0),
-            ObjectType::Player => Velocity::new(0.0, -4.0),
+            ObjectType::Enemy => Velocity::new(0, 4),
+            ObjectType::Player => Velocity::new(0, -4),
             _ => panic!("Unknown shooter"),
         };
 
         let bullet = Some(BulletState {
-            position: position + Position::new(0.0, -35.0),
+            position: position + Velocity::new(0, -35),
             shooter_type,
             shooter_id,
             velocity,

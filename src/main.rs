@@ -20,6 +20,8 @@ lazy_static! {
     static ref DELAY: Duration = Duration::new(0, 1_000_000_000 / FPS as u32);
 }
 
+const SCREEN_SIZE: (u32, u32) = (800, 600);
+
 pub fn main() {
     println!("Starting up");
 
