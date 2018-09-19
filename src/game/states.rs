@@ -4,11 +4,11 @@ use game::EnemyState;
 use game::GameObject;
 use game::Id;
 use game::InputState;
+use game::Level;
 use game::ObjectType;
 use game::PlayerState;
 use game::Position;
 use game::Renderer;
-use game::Scene;
 use game::Velocity;
 use SCREEN_SIZE;
 use std::collections::HashMap;
@@ -89,14 +89,14 @@ impl PlayerState {
         self.velocity = new_velocity;
     }
 
-    pub fn draw(&mut self, renderer: &mut Renderer, scene: &Scene) {
-        renderer.draw_frame("plane", self.position, self.frame, scene);
+    pub fn draw(&mut self, renderer: &mut Renderer, level: &Level) {
+        renderer.draw_frame("plane", self.position, self.frame, level);
     }
 
-    pub fn update(&mut self, scene: &Scene) -> Option<GameObject> {
+    pub fn update(&mut self, level: &Level) -> Option<GameObject> {
         self.frame = (self.frame + 1) % 3;
 
-        self.position += self.calculate_velocity(scene);
+        self.position += self.calculate_velocity(level);
 
         if self.is_shooting && self.is_allowed_to_shoot() {
             Some(self.shoots())
@@ -105,16 +105,17 @@ impl PlayerState {
         }
     }
 
-    fn calculate_velocity(&self, scene: &Scene) -> Velocity {
+    fn calculate_velocity(&self, level: &Level) -> Velocity {
         let (screen_width, screen_height) = SCREEN_SIZE;
         let mut fixed_velocity = self.velocity;
         let new_position = self.position + fixed_velocity;
+        let (vertical_padding, horizontal_padding) = self.collision_padding();
 
-        if new_position.x <= 0 || new_position.x + self.width as i32 >= screen_width as i32 {
+        if new_position.x + vertical_padding as i32 <= 0 || new_position.x + vertical_padding as i32 + self.width as i32 >= screen_width as i32 {
             fixed_velocity.x = 0;
         }
 
-        if new_position.y <= scene.position.y || new_position.y + self.height as i32 >= scene.position.y + screen_height as i32 {
+        if new_position.y + horizontal_padding as i32 <= level.position.y || new_position.y + horizontal_padding as i32 + self.height as i32 >= level.position.y + screen_height as i32 {
             fixed_velocity.y = -1;
         }
 
@@ -149,8 +150,8 @@ impl EnemyState {
 
     pub fn input(&mut self, _input_state: &[InputState]) {}
 
-    pub fn draw(&mut self, renderer: &mut Renderer, scene: &Scene) {
-        renderer.draw_texture("whitePlane", self.position, scene);
+    pub fn draw(&mut self, renderer: &mut Renderer, level: &Level) {
+        renderer.draw_texture("whitePlane", self.position, level);
     }
 
     pub fn update(&mut self) -> Option<GameObject> {
@@ -175,8 +176,8 @@ impl BulletState {
         }
     }
 
-    pub fn draw(&mut self, renderer: &mut Renderer, scene: &Scene) {
-        renderer.draw_texture("bullet", self.position, scene);
+    pub fn draw(&mut self, renderer: &mut Renderer, level: &Level) {
+        renderer.draw_texture("bullet", self.position, level);
     }
 
     pub fn update(&mut self) -> Option<GameObject> {
@@ -190,31 +191,19 @@ impl BulletState {
 }
 
 impl CollisionState for BulletState {
-    fn position(&self) -> Position {
-        self.position
-    }
-
-    fn size(&self) -> (u32, u32) {
-        (32, 32)
-    }
+    fn position(&self) -> Position { self.position }
+    fn size(&self) -> (u32, u32) { (32, 32) }
+    fn collision_padding(&self) -> (u32, u32) { (5, 25) }
 }
 
 impl CollisionState for PlayerState {
-    fn position(&self) -> Position {
-        self.position
-    }
-
-    fn size(&self) -> (u32, u32) {
-        (self.width, self.height)
-    }
+    fn position(&self) -> Position { self.position }
+    fn size(&self) -> (u32, u32) { (self.width, self.height) }
+    fn collision_padding(&self) -> (u32, u32) { (3, 10) }
 }
 
 impl CollisionState for EnemyState {
-    fn position(&self) -> Position {
-        self.position
-    }
-
-    fn size(&self) -> (u32, u32) {
-        (self.width, self.height)
-    }
+    fn position(&self) -> Position { self.position }
+    fn size(&self) -> (u32, u32) { (self.width, self.height) }
+    fn collision_padding(&self) -> (u32, u32) { (5, 10) }
 }

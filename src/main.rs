@@ -1,9 +1,9 @@
 extern crate base64;
 extern crate cgmath;
 extern crate core;
+extern crate sdl2;
 #[macro_use]
 extern crate lazy_static;
-extern crate sdl2;
 
 use helpers::parsers;
 use std::thread;
@@ -27,7 +27,7 @@ pub fn main() {
 
     let sdl_context = sdl::SDLEngine::init();
 
-    let (game_objects, scene, texture_wrappers) = parsers::map_file::parse("assets/map1.tmx");
+    let (game_objects, level, texture_wrappers) = parsers::map_file::parse("assets/map1.tmx");
 
     let input_handler = sdl::SDLInputHandler::new(&sdl_context);
 
@@ -35,7 +35,7 @@ pub fn main() {
     let texture_manager = sdl::TextureManager::new(&texture_creator);
     let renderer = sdl::SDLRenderer::new(canvas, texture_manager, texture_wrappers);
 
-    let mut engine = game::Engine::new(game_objects, scene, renderer, input_handler);
+    let mut engine = game::Engine::new(game_objects, level, renderer, input_handler);
 
     while engine.is_running {
         let frame_start = SystemTime::now();

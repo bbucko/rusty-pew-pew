@@ -3,7 +3,7 @@ use game::GameObject;
 use game::InputHandler;
 use game::InputState;
 use game::Renderer;
-use game::Scene;
+use game::Level;
 use std::mem;
 
 impl<R, I> Engine<R, I>
@@ -11,18 +11,18 @@ where
     R: Renderer,
     I: InputHandler,
 {
-    pub fn new(game_objects: Vec<Option<GameObject>>, scene: Scene, renderer: R, input_handler: I) -> Engine<R, I> {
+    pub fn new(game_objects: Vec<Option<GameObject>>, level: Level, renderer: R, input_handler: I) -> Engine<R, I> {
         Engine {
             is_running: true,
             renderer,
             input_handler,
-            scene,
+            level,
             game_objects,
         }
     }
 
     pub fn draw(&mut self) {
-        self.renderer.render(&mut self.game_objects, &self.scene);
+        self.renderer.render(&mut self.game_objects, &self.level);
     }
 
     pub fn handle_input(&mut self) {
@@ -45,7 +45,7 @@ where
         self.check_collisions();
         self.remove_destroyed_objects();
 
-        self.scene.update();
+        self.level.update();
     }
 
     fn update_objects(&mut self) {
@@ -53,7 +53,7 @@ where
 
         for game_object in self.game_objects.iter_mut() {
             if let Some(ref mut game_object) = game_object {
-                game_object.update(&mut new_object, &self.scene);
+                game_object.update(&mut new_object, &self.level);
             }
         }
 
@@ -122,22 +122,22 @@ mod tests {
     use game::PlayerState;
     use game::Position;
     use game::Renderer;
-    use game::Scene;
+    use game::Level;
 
     struct MockRenderer {}
 
     struct MockInputHandler {}
 
     impl Renderer for MockRenderer {
-        fn render(&mut self, _game_objects: &mut [Option<GameObject>], _scene: &Scene) {
+        fn render(&mut self, _game_objects: &mut [Option<GameObject>], _level: &Level) {
             unimplemented!()
         }
 
-        fn draw_texture(&mut self, _texture_id: &str, _position: Position, _scene: &Scene) {
+        fn draw_texture(&mut self, _texture_id: &str, _position: Position, _level: &Level) {
             unimplemented!()
         }
 
-        fn draw_frame(&mut self, _texture_id: &str, _position: Position, _frame: u8, _scene: &Scene) {
+        fn draw_frame(&mut self, _texture_id: &str, _position: Position, _frame: u8, _level: &Level) {
             unimplemented!()
         }
     }
@@ -153,8 +153,8 @@ mod tests {
     fn test_removal_of_empty_list() {
         //given
         let game_objects = vec![];
-        let scene = create_fake_scene();
-        let mut engine = Engine::new(game_objects, scene, MockRenderer {}, MockInputHandler {});
+        let level = create_fake_level();
+        let mut engine = Engine::new(game_objects, level, MockRenderer {}, MockInputHandler {});
 
         //when
         engine.remove_destroyed_objects();
@@ -167,8 +167,8 @@ mod tests {
     fn test_removal_of_list_of_none() {
         //given
         let game_objects = vec![None];
-        let scene = create_fake_scene();
-        let mut engine = Engine::new(game_objects, scene, MockRenderer {}, MockInputHandler {});
+        let level = create_fake_level();
+        let mut engine = Engine::new(game_objects, level, MockRenderer {}, MockInputHandler {});
 
         //when
         engine.remove_destroyed_objects();
@@ -182,8 +182,8 @@ mod tests {
         //given
         let obj = Some(create_fake_object(1));
         let game_objects = vec![obj];
-        let scene = create_fake_scene();
-        let mut engine = Engine::new(game_objects, scene, MockRenderer {}, MockInputHandler {});
+        let level = create_fake_level();
+        let mut engine = Engine::new(game_objects, level, MockRenderer {}, MockInputHandler {});
 
         //when
         engine.remove_destroyed_objects();
@@ -206,8 +206,8 @@ mod tests {
             object_type: ObjectType::Player,
         });
         let game_objects = vec![obj];
-        let scene = create_fake_scene();
-        let mut engine = Engine::new(game_objects, scene, MockRenderer {}, MockInputHandler {});
+        let level = create_fake_level();
+        let mut engine = Engine::new(game_objects, level, MockRenderer {}, MockInputHandler {});
 
         //when
         engine.remove_destroyed_objects();
@@ -228,8 +228,8 @@ mod tests {
             Some(create_fake_object(6)),
             Some(create_fake_object(7)),
         ];
-        let scene = create_fake_scene();
-        let mut engine = Engine::new(game_objects, scene, MockRenderer {}, MockInputHandler {});
+        let level = create_fake_level();
+        let mut engine = Engine::new(game_objects, level, MockRenderer {}, MockInputHandler {});
 
         //when
         engine.check_collisions();
@@ -253,8 +253,8 @@ mod tests {
             None,
             Some(create_fake_object(7)),
         ];
-        let scene = create_fake_scene();
-        let mut engine = Engine::new(game_objects, scene, MockRenderer {}, MockInputHandler {});
+        let level = create_fake_level();
+        let mut engine = Engine::new(game_objects, level, MockRenderer {}, MockInputHandler {});
 
         //when
         engine.check_collisions();
@@ -268,8 +268,8 @@ mod tests {
         //given
         let game_objects = vec![None];
         let new_objects = vec![Some(create_fake_object(1))];
-        let scene = create_fake_scene();
-        let mut engine = Engine::new(game_objects, scene, MockRenderer {}, MockInputHandler {});
+        let level = create_fake_level();
+        let mut engine = Engine::new(game_objects, level, MockRenderer {}, MockInputHandler {});
 
         //when
         engine.add_new_objects(new_objects);
@@ -282,8 +282,8 @@ mod tests {
         //given
         let game_objects = vec![Some(create_fake_object(0))];
         let new_objects = vec![Some(create_fake_object(1)), Some(create_fake_object(2))];
-        let scene = create_fake_scene();
-        let mut engine = Engine::new(game_objects, scene, MockRenderer {}, MockInputHandler {});
+        let level = create_fake_level();
+        let mut engine = Engine::new(game_objects, level, MockRenderer {}, MockInputHandler {});
 
         //when
         engine.add_new_objects(new_objects);
@@ -303,8 +303,8 @@ mod tests {
         //given
         let game_objects = vec![None, Some(create_fake_object(1))];
         let new_objects = vec![Some(create_fake_object(2)), Some(create_fake_object(3))];
-        let scene = create_fake_scene();
-        let mut engine = Engine::new(game_objects, scene, MockRenderer {}, MockInputHandler {});
+        let level = create_fake_level();
+        let mut engine = Engine::new(game_objects, level, MockRenderer {}, MockInputHandler {});
 
         //when
         engine.add_new_objects(new_objects);
@@ -325,8 +325,8 @@ mod tests {
         let game_objects = vec![None, Some(create_fake_object(1))];
 
         let new_objects = vec![Some(create_fake_object(2)), None];
-        let scene = create_fake_scene();
-        let mut engine = Engine::new(game_objects, scene, MockRenderer {}, MockInputHandler {});
+        let level = create_fake_level();
+        let mut engine = Engine::new(game_objects, level, MockRenderer {}, MockInputHandler {});
 
         //when
         engine.add_new_objects(new_objects);
@@ -347,7 +347,7 @@ mod tests {
         }
     }
 
-    fn create_fake_scene() -> Scene {
-        Scene::new(1000, 1000, vec![])
+    fn create_fake_level() -> Level {
+        Level::new(1000, 1000, vec![])
     }
 }

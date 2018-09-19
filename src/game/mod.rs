@@ -4,27 +4,25 @@ use std::time::SystemTime;
 mod engine;
 mod game_object;
 mod misc;
-mod scene;
+mod level;
 pub mod states;
 
 pub type Position = Vector2<i32>;
 pub type Velocity = Vector2<i32>;
 pub type Id = usize;
 
-const RECT_PADDING: u32 = 2;
-
 pub struct Engine<R: Renderer, I: InputHandler> {
     pub is_running: bool,
     renderer: R,
     input_handler: I,
-    scene: Scene,
+    level: Level,
     game_objects: Vec<Option<GameObject>>,
 }
 
 pub trait Renderer {
-    fn render(&mut self, game_objects: &mut [Option<GameObject>], scene: &Scene);
-    fn draw_texture(&mut self, texture_id: &str, position: Position, scene: &Scene);
-    fn draw_frame(&mut self, texture_id: &str, position: Position, frame: u8, scene: &Scene);
+    fn render(&mut self, game_objects: &mut [Option<GameObject>], level: &Level);
+    fn draw_texture(&mut self, texture_id: &str, position: Position, level: &Level);
+    fn draw_frame(&mut self, texture_id: &str, position: Position, frame: u8, level: &Level);
 }
 
 #[derive(Debug, PartialEq)]
@@ -42,7 +40,7 @@ pub trait InputHandler {
 }
 
 #[allow(dead_code)]
-pub struct Scene {
+pub struct Level {
     pub position: Position,
     width: u32,
     height: u32,
@@ -98,6 +96,7 @@ pub struct BulletState {
     pub is_destroyed: bool,
 }
 
+#[derive(Debug)]
 struct Rect {
     x: i32,
     y: i32,
@@ -108,21 +107,24 @@ struct Rect {
 trait CollisionState {
     fn position(&self) -> Position;
     fn size(&self) -> (u32, u32);
-    fn rect(&self) -> Rect {
-        Rect::new(self.position().x, self.position().y, self.size().0, self.size().1)
-    }
-    fn rect_with_padding(&self) -> Rect {
+    fn collision_padding(&self) -> (u32, u32);
+
+    fn collision_rect(&self) -> Rect {
+        let (padding_horizontal, padding_vertical) = self.collision_padding();
+        let position = self.position();
+        let (width, height) = self.size();
+
         Rect::new(
-            self.position().x,
-            self.position().y,
-            self.size().0 - RECT_PADDING,
-            self.size().1 - RECT_PADDING,
+            position.x + padding_horizontal as i32,
+            position.y + padding_vertical as i32,
+            width - padding_horizontal,
+            height - padding_vertical,
         )
     }
 
     fn is_colliding(&self, other: &CollisionState) -> bool {
-        let a = self.rect_with_padding();
-        let b = other.rect_with_padding();
+        let a = self.collision_rect();
+        let b = other.collision_rect();
 
         a.has_intersection(&b)
     }

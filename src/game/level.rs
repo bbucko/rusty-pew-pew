@@ -1,11 +1,11 @@
 use game::Position;
-use game::Scene;
+use game::Level;
 use SCREEN_SIZE;
 
-impl Scene {
-    pub fn new(width: u32, height: u32, tiles: Vec<u8>) -> Scene {
+impl Level {
+    pub fn new(width: u32, height: u32, tiles: Vec<u8>) -> Level {
         let position = Position::new(0, ((height * 32) - SCREEN_SIZE.1) as i32);
-        Scene {
+        Level {
             position,
             width,
             height,

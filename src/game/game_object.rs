@@ -4,11 +4,11 @@ use game::EnemyState;
 use game::GameObject;
 use game::Id;
 use game::InputState;
+use game::Level;
 use game::ObjectType;
 use game::PlayerState;
 use game::Position;
 use game::Renderer;
-use game::Scene;
 use game::Velocity;
 use std::fmt::Debug;
 use std::fmt::Error;
@@ -67,18 +67,18 @@ impl GameObject {
         }
     }
 
-    pub fn draw(&mut self, renderer: &mut Renderer, scene: &Scene) {
+    pub fn draw(&mut self, renderer: &mut Renderer, level: &Level) {
         match (&mut self.player, &mut self.enemy, &mut self.bullet) {
-            (Some(ref mut player), _, _) => player.draw(renderer, scene),
-            (_, Some(ref mut enemy), _) => enemy.draw(renderer, scene),
-            (_, _, Some(ref mut bullet)) => bullet.draw(renderer, scene),
+            (Some(ref mut player), _, _) => player.draw(renderer, level),
+            (_, Some(ref mut enemy), _) => enemy.draw(renderer, level),
+            (_, _, Some(ref mut bullet)) => bullet.draw(renderer, level),
             _ => panic!("Incorrectly constructed object"),
         }
     }
 
-    pub fn update(&mut self, new_objects: &mut Vec<Option<GameObject>>, scene: &Scene) {
+    pub fn update(&mut self, new_objects: &mut Vec<Option<GameObject>>, level: &Level) {
         let new_object = match (&mut self.player, &mut self.enemy, &mut self.bullet) {
-            (Some(ref mut player), _, _) => player.update(scene),
+            (Some(ref mut player), _, _) => player.update(level),
             (_, Some(ref mut enemy), _) => enemy.update(),
             (_, _, Some(ref mut bullet)) => bullet.update(),
             _ => panic!("Incorrectly constructed or unknown object"),
@@ -90,7 +90,7 @@ impl GameObject {
 
         let position = self.position();
 
-        if position.y < scene.position.y {
+        if position.y < level.position.y {
             self.destroy();
         }
     }
@@ -146,8 +146,12 @@ impl GameObject {
         }
 
         if hit {
-            collider.destroy();
-            self.destroy();
+            if collider.object_type != ObjectType::Enemy {
+                collider.destroy();
+            }
+            if self.object_type != ObjectType::Enemy {
+                self.destroy();
+            }
         }
     }
 

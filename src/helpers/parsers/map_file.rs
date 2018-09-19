@@ -1,7 +1,7 @@
 use base64::decode;
 use game::states;
 use game::GameObject;
-use game::Scene;
+use game::Level;
 use helpers::parsers::find_attribute;
 use helpers::parsers::inflate::inflate_bytes_zlib;
 use helpers::parsers::parser;
@@ -20,7 +20,7 @@ enum XmlReadingState {
     InMapObjectgroupObject,
 }
 
-pub fn parse(filename: &str) -> (Vec<Option<GameObject>>, Scene, HashMap<String, TextureWrapper>) {
+pub fn parse(filename: &str) -> (Vec<Option<GameObject>>, Level, HashMap<String, TextureWrapper>) {
     let mut state = XmlReadingState::Root;
     let mut properties: HashMap<String, String> = HashMap::new();
 
@@ -117,7 +117,7 @@ pub fn parse(filename: &str) -> (Vec<Option<GameObject>>, Scene, HashMap<String,
         }
     }
 
-    (game_objects, Scene::new(width, height, tiles), texture_wrappers)
+    (game_objects, Level::new(width, height, tiles), texture_wrappers)
 }
 
 #[cfg(test)]
@@ -127,7 +127,7 @@ mod tests {
 
     #[test]
     fn test_parsing() {
-        let (game_objects, _scene, texture_wrappers) = parsers::map_file::parse("assets/map1.tmx");
+        let (game_objects, _level, texture_wrappers) = parsers::map_file::parse("assets/map1.tmx");
         assert_eq!(game_objects.len(), 3);
 
         let ids: Vec<Id> = game_objects

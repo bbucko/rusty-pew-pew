@@ -1,7 +1,7 @@
 use game::GameObject;
+use game::Level;
 use game::Position;
 use game::Renderer;
-use game::Scene;
 use helpers::parsers;
 use SCREEN_SIZE;
 use sdl::sdl2::pixels::Color;
@@ -17,30 +17,30 @@ use sdl::TextureWrapper;
 use std::collections::HashMap;
 
 impl<'a> Renderer for SDLRenderer<'a> {
-    fn render(&mut self, game_objects: &mut [Option<GameObject>], scene: &Scene) {
+    fn render(&mut self, game_objects: &mut [Option<GameObject>], level: &Level) {
         self.canvas.clear();
 
         for game_object in game_objects {
             if let Some(game_object) = game_object {
-                game_object.draw(self, scene);
+                game_object.draw(self, level);
             }
         }
 
         self.canvas.present();
     }
 
-    fn draw_texture(&mut self, texture_id: &str, position: Position, scene: &Scene) {
-        self.draw_frame(texture_id, position, 0, scene);
+    fn draw_texture(&mut self, texture_id: &str, position: Position, level: &Level) {
+        self.draw_frame(texture_id, position, 0, level);
     }
 
-    fn draw_frame(&mut self, texture_id: &str, position: Position, frame: u8, scene: &Scene) {
+    fn draw_frame(&mut self, texture_id: &str, position: Position, frame: u8, level: &Level) {
         let texture_wrapper = self.texture_wrappers.get(texture_id).expect("Missing texture wrapper");
 
         let texture = self.texture_manager.load(texture_id).expect("Error loading texture");
 
         let src_rect = texture_wrapper.src_rect(frame);
 
-        let position_on_screen = position - scene.position;
+        let position_on_screen = position - level.position;
 
         let dst_rect = Rect::new(
             position_on_screen.x as i32,
