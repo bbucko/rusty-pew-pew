@@ -31,9 +31,9 @@ pub fn main() {
 
     let input_handler = sdl::SDLInputHandler::new(&sdl_context);
 
-    let (canvas, texture_creator) = sdl::SDLRenderer::init(&sdl_context);
+    let (canvas, texture_creator, timer) = sdl::SDLRenderer::init(&sdl_context);
     let texture_manager = sdl::TextureManager::new(&texture_creator);
-    let renderer = sdl::SDLRenderer::new(canvas, texture_manager, texture_wrappers);
+    let renderer = sdl::SDLRenderer::new(canvas, texture_manager, texture_wrappers, timer);
 
     let mut engine = game::Engine::new(game_objects, level, renderer, input_handler);
 

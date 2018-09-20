@@ -8,6 +8,7 @@ use sdl::sdl2::pixels::Color;
 use sdl::sdl2::rect::Rect;
 use sdl::sdl2::render::Canvas;
 use sdl::sdl2::render::TextureCreator;
+use sdl::sdl2::TimerSubsystem;
 use sdl::sdl2::video::Window;
 use sdl::sdl2::video::WindowContext;
 use sdl::SDLEngine;
@@ -30,13 +31,31 @@ impl<'a> Renderer for SDLRenderer<'a> {
     }
 
     fn draw_texture(&mut self, texture_id: &str, position: Position, level: &Level) {
-        self.draw_frame(texture_id, position, 0, level);
+        let texture_wrapper = self.texture_wrappers.get(texture_id).expect("Missing texture wrapper");
+        let texture = self.texture_manager.load(texture_id).expect("Error loading texture");
+
+        let src_rect = texture_wrapper.src_rect(0);
+
+        let position_on_screen = position - level.position;
+
+        let dst_rect = Rect::new(
+            position_on_screen.x as i32,
+            position_on_screen.y as i32,
+            texture_wrapper.width,
+            texture_wrapper.height,
+        );
+
+        self.canvas
+            .copy(&texture, src_rect, dst_rect)
+            .expect("Problem copying texture");
     }
 
-    fn draw_frame(&mut self, texture_id: &str, position: Position, frame: u8, level: &Level) {
-        let texture_wrapper = self.texture_wrappers.get(texture_id).expect("Missing texture wrapper");
+    fn draw_frame(&mut self, texture_id: &str, position: Position, level: &Level) {
+        let ticks = self.timer.ticks();
 
+        let texture_wrapper = self.texture_wrappers.get(texture_id).expect("Missing texture wrapper");
         let texture = self.texture_manager.load(texture_id).expect("Error loading texture");
+        let frame = (ticks / 100) % texture_wrapper.frames as u32;
 
         let src_rect = texture_wrapper.src_rect(frame);
 
@@ -56,7 +75,8 @@ impl<'a> Renderer for SDLRenderer<'a> {
 }
 
 impl<'a> SDLRenderer<'a> {
-    pub fn init(engine: &SDLEngine) -> (Canvas<Window>, TextureCreator<WindowContext>) {
+    pub fn init(engine: &SDLEngine) -> (Canvas<Window>, TextureCreator<WindowContext>, TimerSubsystem) {
+        let timer = engine.context.timer().unwrap();
         let video_subsystem = engine.context.video().unwrap();
         let (screen_width, screen_height) = SCREEN_SIZE;
         let window = video_subsystem
@@ -66,24 +86,24 @@ impl<'a> SDLRenderer<'a> {
             .build()
             .expect("Error creating window");
 
-        let mut canvas = window.into_canvas().present_vsync().build().unwrap();
+        let mut canvas = window.into_canvas().accelerated().build().unwrap();
         canvas.set_draw_color(Color::RGB(0, 0, 0));
 
         let texture_creator = canvas.texture_creator();
-        (canvas, texture_creator)
+        (canvas, texture_creator, timer)
     }
 
-    pub fn new(
-        canvas: Canvas<Window>,
-        mut texture_manager: TextureManager<'a, WindowContext>,
-        mut texture_wrappers: HashMap<String, TextureWrapper>,
-    ) -> Self {
+    pub fn new(canvas: Canvas<Window>,
+               mut texture_manager: TextureManager<'a, WindowContext>,
+               mut texture_wrappers: HashMap<String, TextureWrapper>,
+               timer: TimerSubsystem) -> Self {
         Self::load_textures(&mut texture_manager, &mut texture_wrappers);
 
         Self {
             canvas,
             texture_manager,
             texture_wrappers,
+            timer,
         }
     }
 
@@ -113,13 +133,12 @@ impl TextureWrapper {
             frames,
         }
     }
-    pub fn src_rect(&self, frame: u8) -> Rect {
+    pub fn src_rect(&self, frame: u32) -> Rect {
         let padding = self.padding as u32;
-
         let width = self.width;
         let height = self.height;
-        let x = (frame as u32 * (width + padding) + padding) as i32;
-        let y = (frame as u32 * (width + padding) + padding) as i32;
+        let x = (frame * (width + padding) + padding) as i32;
+        let y = padding as i32;
         Rect::new(x, y, width, height)
     }
 }

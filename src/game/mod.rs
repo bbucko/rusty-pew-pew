@@ -22,7 +22,7 @@ pub struct Engine<R: Renderer, I: InputHandler> {
 pub trait Renderer {
     fn render(&mut self, game_objects: &mut [Option<GameObject>], level: &Level);
     fn draw_texture(&mut self, texture_id: &str, position: Position, level: &Level);
-    fn draw_frame(&mut self, texture_id: &str, position: Position, frame: u8, level: &Level);
+    fn draw_frame(&mut self, texture_id: &str, position: Position, level: &Level);
 }
 
 #[derive(Debug, PartialEq)]
@@ -68,7 +68,6 @@ pub struct GameObject {
 pub struct PlayerState {
     id: Id,
     position: Position,
-    frame: u8,
     pub is_shooting: bool,
     pub is_destroyed: bool,
     last_shot_date: SystemTime,

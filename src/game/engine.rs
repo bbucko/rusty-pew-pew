@@ -2,14 +2,14 @@ use game::Engine;
 use game::GameObject;
 use game::InputHandler;
 use game::InputState;
-use game::Renderer;
 use game::Level;
+use game::Renderer;
 use std::mem;
 
 impl<R, I> Engine<R, I>
-where
-    R: Renderer,
-    I: InputHandler,
+    where
+        R: Renderer,
+        I: InputHandler,
 {
     pub fn new(game_objects: Vec<Option<GameObject>>, level: Level, renderer: R, input_handler: I) -> Engine<R, I> {
         Engine {
@@ -118,11 +118,11 @@ mod tests {
     use game::Id;
     use game::InputHandler;
     use game::InputState;
+    use game::Level;
     use game::ObjectType;
     use game::PlayerState;
     use game::Position;
     use game::Renderer;
-    use game::Level;
 
     struct MockRenderer {}
 
@@ -137,7 +137,7 @@ mod tests {
             unimplemented!()
         }
 
-        fn draw_frame(&mut self, _texture_id: &str, _position: Position, _frame: u8, _level: &Level) {
+        fn draw_frame(&mut self, _texture_id: &str, _position: Position, _level: &Level) {
             unimplemented!()
         }
     }

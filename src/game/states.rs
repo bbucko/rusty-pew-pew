@@ -64,7 +64,6 @@ impl PlayerState {
         PlayerState {
             id,
             position,
-            frame: 0,
             is_shooting: false,
             last_shot_date: SystemTime::now(),
             is_destroyed: false,
@@ -90,12 +89,10 @@ impl PlayerState {
     }
 
     pub fn draw(&mut self, renderer: &mut Renderer, level: &Level) {
-        renderer.draw_frame("plane", self.position, self.frame, level);
+        renderer.draw_frame("plane", self.position, level);
     }
 
     pub fn update(&mut self, level: &Level) -> Option<GameObject> {
-        self.frame = (self.frame + 1) % 3;
-
         self.position += self.calculate_velocity(level);
 
         if self.is_shooting && self.is_allowed_to_shoot() {
