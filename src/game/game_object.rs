@@ -146,12 +146,8 @@ impl GameObject {
         }
 
         if hit {
-            if collider.object_type != ObjectType::Enemy {
-                collider.destroy();
-            }
-            if self.object_type != ObjectType::Enemy {
-                self.destroy();
-            }
+            collider.destroy();
+            self.destroy();
         }
     }
 
