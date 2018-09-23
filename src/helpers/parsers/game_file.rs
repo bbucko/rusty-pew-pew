@@ -30,19 +30,16 @@ pub fn parse(textures: &mut Vec<(String, String)>, texture_wrappers: &mut HashMa
                         let width: Option<String> = find_attribute(&attributes, "width");
                         let height: Option<String> = find_attribute(&attributes, "height");
 
-                        match (width, height) {
-                            (Some(width), Some(height)) => {
-                                let padding = find_attribute(&attributes, "padding").unwrap_or(0);
-                                let frames = find_attribute(&attributes, "frames").unwrap_or(0);
-                                let width: u32 = width.parse().unwrap();
-                                let height: u32 = height.parse().unwrap();
+                        if let (Some(width), Some(height)) = (width, height) {
+                            let padding = find_attribute(&attributes, "padding").unwrap_or(0);
+                            let frames = find_attribute(&attributes, "frames").unwrap_or(0);
+                            let width: u32 = width.parse().unwrap();
+                            let height: u32 = height.parse().unwrap();
 
-                                texture_wrappers.insert(
-                                    key.clone(),
-                                    TextureWrapper::new(key.clone(), width, height, padding, frames),
-                                );
-                            }
-                            _ => {}
+                            texture_wrappers.insert(
+                                key.clone(),
+                                TextureWrapper::new(key.clone(), width, height, padding, frames),
+                            );
                         }
 
                         textures.push((key.clone(), filename));

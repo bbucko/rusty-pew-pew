@@ -1,7 +1,7 @@
 use base64::decode;
-use game::states;
 use game::GameObject;
 use game::Level;
+use game::states;
 use helpers::parsers::find_attribute;
 use helpers::parsers::inflate::inflate_bytes_zlib;
 use helpers::parsers::parser;
@@ -20,7 +20,7 @@ enum XmlReadingState {
     InMapObjectgroupObject,
 }
 
-pub fn parse(filename: &str) -> (Vec<Option<GameObject>>, Level, HashMap<String, TextureWrapper>) {
+pub fn parse(filename: &str) -> (Vec<Option<GameObject>>, Level, HashMap<String, TextureWrapper>, (u8, u8, u8)) {
     let mut state = XmlReadingState::Root;
     let mut properties: HashMap<String, String> = HashMap::new();
 
@@ -29,6 +29,7 @@ pub fn parse(filename: &str) -> (Vec<Option<GameObject>>, Level, HashMap<String,
     let mut tiles = Vec::new();
     let mut width = 0;
     let mut height = 0;
+    let mut color = (0, 0, 0);
 
     for e in parser(filename) {
         match e {
@@ -38,6 +39,14 @@ pub fn parse(filename: &str) -> (Vec<Option<GameObject>>, Level, HashMap<String,
                     (XmlReadingState::Root, "map") => {
                         height = find_attribute(&attributes, "height").expect("Missing tiles height");
                         width = find_attribute(&attributes, "width").expect("Missing tiles width");
+                        let background_color: String = find_attribute(&attributes, "backgroundcolor").expect("Missing background color");
+
+                        let r = u8::from_str_radix(&background_color[1..3], 16).unwrap();
+                        let g = u8::from_str_radix(&background_color[3..5], 16).unwrap();
+                        let b = u8::from_str_radix(&background_color[5..7], 16).unwrap();
+
+                        color = (r, g, b);
+
                         XmlReadingState::InMap
                     }
                     (XmlReadingState::InMap, "layer") => XmlReadingState::InMapLayer,
@@ -117,7 +126,7 @@ pub fn parse(filename: &str) -> (Vec<Option<GameObject>>, Level, HashMap<String,
         }
     }
 
-    (game_objects, Level::new(width, height, tiles), texture_wrappers)
+    (game_objects, Level::new(width, height, tiles), texture_wrappers, color)
 }
 
 #[cfg(test)]
@@ -127,7 +136,7 @@ mod tests {
 
     #[test]
     fn test_parsing() {
-        let (game_objects, _level, texture_wrappers) = parsers::map_file::parse("assets/map1.tmx");
+        let (game_objects, level, texture_wrappers, color) = parsers::map_file::parse("assets/map1.tmx");
         assert_eq!(game_objects.len(), 3);
 
         let ids: Vec<Id> = game_objects
@@ -142,5 +151,11 @@ mod tests {
         assert_eq!(ids[2], 3);
 
         assert_eq!(texture_wrappers.len(), 2);
+
+        assert_eq!(level.tiles.len(), 4800);
+        assert_eq!(level.width, 20);
+        assert_eq!(level.height, 60);
+
+        assert_eq!(color, (2, 45, 155));
     }
 }

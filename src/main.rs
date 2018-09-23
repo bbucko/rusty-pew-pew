@@ -27,11 +27,11 @@ pub fn main() {
 
     let sdl_context = sdl::SDLEngine::init();
 
-    let (game_objects, level, texture_wrappers) = parsers::map_file::parse("assets/map1.tmx");
+    let (game_objects, level, texture_wrappers, background_color) = parsers::map_file::parse("assets/map1.tmx");
 
     let input_handler = sdl::SDLInputHandler::new(&sdl_context);
 
-    let (canvas, texture_creator, timer) = sdl::SDLRenderer::init(&sdl_context);
+    let (canvas, texture_creator, timer) = sdl::SDLRenderer::init(&sdl_context, background_color);
     let texture_manager = sdl::TextureManager::new(&texture_creator);
     let renderer = sdl::SDLRenderer::new(canvas, texture_manager, texture_wrappers, timer);
 

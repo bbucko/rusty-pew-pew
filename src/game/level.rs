@@ -1,5 +1,5 @@
-use game::Position;
 use game::Level;
+use game::Position;
 use SCREEN_SIZE;
 
 impl Level {

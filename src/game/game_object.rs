@@ -97,9 +97,9 @@ impl GameObject {
 
     fn position(&self) -> Position {
         match (&self.player, &self.enemy, &self.bullet) {
-            (Some(ref player), _, _) => player.position.clone(),
-            (_, Some(ref enemy), _) => enemy.position.clone(),
-            (_, _, Some(ref bullet)) => bullet.position.clone(),
+            (Some(ref player), _, _) => player.position,
+            (_, Some(ref enemy), _) => enemy.position,
+            (_, _, Some(ref bullet)) => bullet.position,
             _ => panic!("Incorrectly constructed or unknown object"),
         }
     }

@@ -51,7 +51,7 @@ impl<R, I> Engine<R, I>
     fn update_objects(&mut self) {
         let mut new_object = Vec::new();
 
-        for game_object in self.game_objects.iter_mut() {
+        for game_object in &mut self.game_objects {
             if let Some(ref mut game_object) = game_object {
                 game_object.update(&mut new_object, &self.level);
             }
@@ -94,7 +94,7 @@ impl<R, I> Engine<R, I>
     }
 
     fn remove_destroyed_objects(&mut self) {
-        for game_object in self.game_objects.iter_mut() {
+        for game_object in &mut self.game_objects {
             let should_remove = match game_object {
                 Some(obj) => obj.is_destroyed(),
                 _ => false,

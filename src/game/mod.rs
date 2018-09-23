@@ -42,9 +42,9 @@ pub trait InputHandler {
 #[allow(dead_code)]
 pub struct Level {
     pub position: Position,
-    width: u32,
-    height: u32,
-    tiles: Vec<u8>,
+    pub width: u32,
+    pub height: u32,
+    pub tiles: Vec<u8>,
 }
 
 #[derive(Debug, PartialEq, Copy, Clone)]
