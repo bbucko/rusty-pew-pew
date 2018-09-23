@@ -20,7 +20,8 @@ enum XmlReadingState {
     InMapObjectgroupObject,
 }
 
-pub fn parse(filename: &str) -> (Vec<Option<GameObject>>, Level, HashMap<String, TextureWrapper>, (u8, u8, u8)) {
+
+pub fn parse(filename: &str) -> (Vec<Option<GameObject>>, Level, HashMap<String, TextureWrapper>, (u8, u8, u8), String) {
     let mut state = XmlReadingState::Root;
     let mut properties: HashMap<String, String> = HashMap::new();
 
@@ -30,7 +31,7 @@ pub fn parse(filename: &str) -> (Vec<Option<GameObject>>, Level, HashMap<String,
     let mut width = 0;
     let mut height = 0;
     let mut color = (0, 0, 0);
-
+    let mut tiles_filename: String = String::new();
     for e in parser(filename) {
         match e {
             Ok(XmlEvent::StartElement { name, attributes, .. }) => {
@@ -50,7 +51,10 @@ pub fn parse(filename: &str) -> (Vec<Option<GameObject>>, Level, HashMap<String,
                         XmlReadingState::InMap
                     }
                     (XmlReadingState::InMap, "layer") => XmlReadingState::InMapLayer,
-                    (XmlReadingState::InMap, "tileset") => XmlReadingState::InMapTileset,
+                    (XmlReadingState::InMap, "tileset") => {
+                        tiles_filename = find_attribute(&attributes, "source").expect("Missing tiles.tsx");
+                        XmlReadingState::InMapTileset
+                    }
                     (XmlReadingState::InMap, "objectgroup") => XmlReadingState::InMapObjectgroup,
                     (XmlReadingState::InMapObjectgroup, "object") => {
                         let available_keys = ["name", "type", "width", "height", "x", "y"].iter();
@@ -126,7 +130,7 @@ pub fn parse(filename: &str) -> (Vec<Option<GameObject>>, Level, HashMap<String,
         }
     }
 
-    (game_objects, Level::new(width, height, tiles), texture_wrappers, color)
+    (game_objects, Level::new(width, height, tiles), texture_wrappers, color, tiles_filename)
 }
 
 #[cfg(test)]
@@ -136,7 +140,7 @@ mod tests {
 
     #[test]
     fn test_parsing() {
-        let (game_objects, level, texture_wrappers, color) = parsers::map_file::parse("assets/map1.tmx");
+        let (game_objects, level, texture_wrappers, color, tiles_filename) = parsers::map_file::parse("assets/map1.tmx");
         assert_eq!(game_objects.len(), 3);
 
         let ids: Vec<Id> = game_objects
@@ -157,5 +161,7 @@ mod tests {
         assert_eq!(level.height, 60);
 
         assert_eq!(color, (2, 45, 155));
+
+        assert_eq!(tiles_filename, "tiles.tsx".to_string());
     }
 }

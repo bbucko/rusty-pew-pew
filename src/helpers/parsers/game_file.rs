@@ -11,10 +11,10 @@ enum XmlReadingState {
     InPlay,
 }
 
-pub fn parse(textures: &mut Vec<(String, String)>, texture_wrappers: &mut HashMap<String, TextureWrapper>) {
+pub fn parse(filename: &str, textures: &mut Vec<(String, String)>, texture_wrappers: &mut HashMap<String, TextureWrapper>) {
     let mut state = XmlReadingState::Root;
 
-    let parser = parser("assets/game.xml");
+    let parser = parser(filename);
 
     for e in parser {
         match e {
@@ -78,7 +78,7 @@ mod tests {
         let mut texture_wrappers = HashMap::new();
 
         //when
-        parsers::game_file::parse(&mut textures, &mut texture_wrappers);
+        parsers::game_file::parse("assets/game.xml", &mut textures, &mut texture_wrappers);
 
         //then
         assert_eq!(textures.len(), 3);

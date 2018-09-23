@@ -9,6 +9,7 @@ use std::str::FromStr;
 
 pub mod game_file;
 pub mod map_file;
+pub mod tiles_file;
 
 pub fn parser(filename: &str) -> EventReader<BufReader<File>> {
     let file = File::open(filename).unwrap();

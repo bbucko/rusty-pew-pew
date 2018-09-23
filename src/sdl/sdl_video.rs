@@ -96,8 +96,10 @@ impl<'a> SDLRenderer<'a> {
     pub fn new(canvas: Canvas<Window>,
                mut texture_manager: TextureManager<'a, WindowContext>,
                mut texture_wrappers: HashMap<String, TextureWrapper>,
+               tiles_filename: &str,
                timer: TimerSubsystem) -> Self {
         Self::load_textures(&mut texture_manager, &mut texture_wrappers);
+        Self::load_tiles(tiles_filename, &mut texture_manager, &mut texture_wrappers);
 
         Self {
             canvas,
@@ -107,12 +109,24 @@ impl<'a> SDLRenderer<'a> {
         }
     }
 
-    fn load_textures(
-        texture_manager: &mut TextureManager<'a, WindowContext>,
-        texture_wrappers: &mut HashMap<String, TextureWrapper>,
-    ) {
+    fn load_textures(texture_manager: &mut TextureManager<'a, WindowContext>,
+                     texture_wrappers: &mut HashMap<String, TextureWrapper>, ) {
         let mut textures = Vec::new();
-        parsers::game_file::parse(&mut textures, texture_wrappers);
+        parsers::game_file::parse("assets/game.xml", &mut textures, texture_wrappers);
+
+        for element in textures {
+            let (key, filename) = element;
+            texture_manager
+                .preload(&key, &filename)
+                .expect("Error preloading texture");
+        }
+    }
+
+    fn load_tiles(filename: &str,
+                  texture_manager: &mut TextureManager<'a, WindowContext>,
+                  texture_wrappers: &mut HashMap<String, TextureWrapper>, ) {
+        let mut textures = Vec::new();
+        parsers::tiles_file::parse(&format!("assets/{}", filename), &mut textures, texture_wrappers);
 
         for element in textures {
             let (key, filename) = element;
