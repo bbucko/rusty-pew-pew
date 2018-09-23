@@ -22,7 +22,17 @@ impl<R, I> Engine<R, I>
     }
 
     pub fn draw(&mut self) {
-        self.renderer.render(&mut self.game_objects, &self.level);
+        self.renderer.clear_scene();
+
+        self.level.draw(&mut self.renderer);
+
+        for game_object in &mut self.game_objects {
+            if let Some(game_object) = game_object {
+                game_object.draw(&mut self.renderer, &self.level);
+            }
+        }
+
+        self.renderer.draw_scene();
     }
 
     pub fn handle_input(&mut self) {
@@ -129,11 +139,19 @@ mod tests {
     struct MockInputHandler {}
 
     impl Renderer for MockRenderer {
-        fn render(&mut self, _game_objects: &mut [Option<GameObject>], _level: &Level) {
+        fn clear_scene(&mut self) {
+            unimplemented!()
+        }
+
+        fn draw_scene(&mut self) {
             unimplemented!()
         }
 
         fn draw_texture(&mut self, _texture_id: &str, _position: Position, _level: &Level) {
+            unimplemented!()
+        }
+
+        fn draw_tile(&mut self, _texture_id: &str, _position: Position, _tile_id: u8) {
             unimplemented!()
         }
 

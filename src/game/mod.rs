@@ -20,8 +20,11 @@ pub struct Engine<R: Renderer, I: InputHandler> {
 }
 
 pub trait Renderer {
-    fn render(&mut self, game_objects: &mut [Option<GameObject>], level: &Level);
+    fn clear_scene(&mut self);
+    fn draw_scene(&mut self);
+
     fn draw_texture(&mut self, texture_id: &str, position: Position, level: &Level);
+    fn draw_tile(&mut self, texture_id: &str, position: Position, tile_id: u8);
     fn draw_frame(&mut self, texture_id: &str, position: Position, level: &Level);
 }
 

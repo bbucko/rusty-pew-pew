@@ -95,28 +95,49 @@ impl PlayerState {
     pub fn update(&mut self, level: &Level) -> Option<GameObject> {
         self.position += self.calculate_velocity(level);
 
-        if self.is_shooting && self.is_allowed_to_shoot() {
-            Some(self.shoots())
-        } else {
-            None
-        }
+        if self.is_shooting && self.is_allowed_to_shoot() { Some(self.shoots()) } else { None }
     }
 
     fn calculate_velocity(&self, level: &Level) -> Velocity {
-        let (screen_width, screen_height) = SCREEN_SIZE;
         let mut fixed_velocity = self.velocity;
         let new_position = self.position + fixed_velocity;
-        let (vertical_padding, horizontal_padding) = self.collision_padding();
+        let collision_padding = self.collision_padding();
 
-        if new_position.x + vertical_padding as i32 <= 0 || new_position.x + vertical_padding as i32 + self.width as i32 >= screen_width as i32 {
+        if self.is_on_right_border(&new_position, &collision_padding) ||
+            self.is_on_left_border(&new_position, &collision_padding) {
             fixed_velocity.x = 0;
         }
 
-        if new_position.y + horizontal_padding as i32 <= level.position.y || new_position.y + horizontal_padding as i32 + self.height as i32 >= level.position.y + screen_height as i32 {
+        if self.is_on_upper_border(&new_position, &collision_padding, &level) ||
+            self.is_on_lower_border(&new_position, &collision_padding, &level) {
             fixed_velocity.y = -1;
         }
 
         fixed_velocity
+    }
+
+    #[inline]
+    fn is_on_upper_border(&self, new_position: &Position, _collision_padding: &(u32, u32), level: &Level) -> bool {
+//        new_position.y + _collision_padding.0 as i32 <= level.position.y
+        new_position.y <= level.position.y
+    }
+
+    #[inline]
+    fn is_on_lower_border(&self, new_position: &Position, _collision_padding: &(u32, u32), level: &Level) -> bool {
+//        new_position.y + collision_padding.1 as i32 + self.height as i32 >= level.position.y + SCREEN_SIZE.1 as i32
+        new_position.y + self.height as i32 >= level.position.y + SCREEN_SIZE.1 as i32
+    }
+
+    #[inline]
+    fn is_on_right_border(&self, new_position: &Position, _collision_padding: &(u32, u32)) -> bool {
+//        new_position.x + collision_padding.0 as i32 <= 0
+        new_position.x <= 0
+    }
+
+    #[inline]
+    fn is_on_left_border(&self, new_position: &Position, _collision_padding: &(u32, u32)) -> bool {
+//        new_position.x + collision_padding.0 as i32 + self.width as i32 >= SCREEN_SIZE.0 as i32
+        new_position.x + self.width as i32 >= SCREEN_SIZE.0 as i32
     }
 
     fn is_allowed_to_shoot(&self) -> bool {

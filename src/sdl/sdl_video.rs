@@ -1,4 +1,3 @@
-use game::GameObject;
 use game::Level;
 use game::Position;
 use game::Renderer;
@@ -18,15 +17,11 @@ use sdl::TextureWrapper;
 use std::collections::HashMap;
 
 impl<'a> Renderer for SDLRenderer<'a> {
-    fn render(&mut self, game_objects: &mut [Option<GameObject>], level: &Level) {
+    fn clear_scene(&mut self) {
         self.canvas.clear();
+    }
 
-        for game_object in game_objects {
-            if let Some(game_object) = game_object {
-                game_object.draw(self, level);
-            }
-        }
-
+    fn draw_scene(&mut self) {
         self.canvas.present();
     }
 
@@ -41,6 +36,24 @@ impl<'a> Renderer for SDLRenderer<'a> {
         let dst_rect = Rect::new(
             position_on_screen.x as i32,
             position_on_screen.y as i32,
+            texture_wrapper.width,
+            texture_wrapper.height,
+        );
+
+        self.canvas
+            .copy(&texture, src_rect, dst_rect)
+            .expect("Problem copying texture");
+    }
+
+    fn draw_tile(&mut self, texture_id: &str, position: Position, tile_id: u8) {
+        let texture_wrapper = self.texture_wrappers.get(texture_id).expect("Missing texture wrapper");
+        let texture = self.texture_manager.load(texture_id).expect("Error loading texture");
+
+        let src_rect = texture_wrapper.src_rect(tile_id as u32);
+
+        let dst_rect = Rect::new(
+            position.x as i32,
+            position.y as i32,
             texture_wrapper.width,
             texture_wrapper.height,
         );

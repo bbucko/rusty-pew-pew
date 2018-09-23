@@ -1,9 +1,9 @@
-use base64::decode;
+use base64;
 use game::GameObject;
 use game::Level;
 use game::states;
 use helpers::parsers::find_attribute;
-use helpers::parsers::inflate::inflate_bytes_zlib;
+use helpers::parsers::inflate;
 use helpers::parsers::parser;
 use helpers::parsers::xml::reader::XmlEvent;
 use sdl::TextureWrapper;
@@ -82,9 +82,16 @@ pub fn parse(filename: &str) -> (Vec<Option<GameObject>>, Level, HashMap<String,
             }
             Ok(XmlEvent::Characters(value)) => {
                 if state == XmlReadingState::InMapLayerData {
-                    let inflated = decode(value.trim()).unwrap();
-                    let deflated = inflate_bytes_zlib(&inflated);
-                    tiles.extend(deflated.expect("Missing tiles").iter());
+                    let inflated = base64::decode(value.trim()).expect("Incorrectly encoded");
+                    let deflated = inflate::inflate_bytes_zlib(&inflated).expect("Incorrectly compressed");
+
+                    let every_fourth = deflated.iter()
+                        .enumerate()
+                        .filter(|(i, _)| i % 4 == 0 )
+                        .map(|(_, value)| value)
+                        .into_iter();
+
+                    tiles.extend(every_fourth);
                 }
             }
             Ok(XmlEvent::EndElement { name, .. }) => {
@@ -156,7 +163,8 @@ mod tests {
 
         assert_eq!(texture_wrappers.len(), 2);
 
-        assert_eq!(level.tiles.len(), 4800);
+        assert_eq!(level.tiles.len(), (level.width * level.height) as usize);
+        assert_eq!(&level.tiles[0..20], &vec![3; 20][..]);
         assert_eq!(level.width, 20);
         assert_eq!(level.height, 60);
 
